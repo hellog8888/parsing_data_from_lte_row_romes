@@ -1,35 +1,52 @@
 import csv
 import glob
 import os
+import datetime
+from numpy import genfromtxt
 
+BASE_STATION = []
+
+def measure_time(func):
+    def wrapper(*args, **kwargs):
+        start_time = datetime.datetime.now()
+        result = func(*args, **kwargs)
+        end_time = datetime.datetime.now()
+        elapsed_time = end_time - start_time
+        print(f"Execution time: {elapsed_time}")
+        return result
+
+    return wrapper
+
+@measure_time
 def search_row(tecRaw_file, bs_list_file):
     with open(tecRaw_file) as tecRaw_in, open(bs_list_file, 'r') as bs_nums:
 
         count = 0
-        temp_bs_list = []
         temp_row_from_reader = []
         temp_dict_EARFCN = dict()
+        header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
 
         for r in bs_nums:
-            temp_bs_list.append(r.strip())
-        print(f'номера бс: {temp_bs_list}')
+            BASE_STATION.append(r.strip())
+        print(f'номера бс: {BASE_STATION}')
+        print()
 
         for row in csv.reader(tecRaw_in, delimiter=','):
             count += 1
             if count > 383:
                 temp_row = row[0].split(';')[16]
-                if temp_row in temp_bs_list:
+                if temp_row in BASE_STATION:
                     temp_row_from_reader.append(*row)
 
-        for i in temp_bs_list:
+        for i in BASE_STATION:
             try:
                 os.mkdir(f'result_folder\{i}')
             except FileExistsError:
                 pass
 
-        for i in temp_bs_list:
+        for i in BASE_STATION:
             try:
-                with open(f'result_folder\{i}\{i}.txt', 'w') as temp_result_file:
+                with open(f'result_folder\{i}\{i}.csv', 'w') as temp_result_file:
 
                     for x in temp_row_from_reader:
                         temp_x = x.split(';')
@@ -38,31 +55,45 @@ def search_row(tecRaw_file, bs_list_file):
 
                     for k, v in temp_dict_EARFCN.items():
                         min_v = -200
+                        temp_row_dict = ''
                         for v1 in v:
                             try:
-                                temp_v = float(v1.split(';')[20])
+                                temp_v_dict = float(v1.split(';')[20])
+                                if temp_v_dict > min_v:
+                                    min_v = temp_v_dict
+                                    temp_row_dict = v1
                             except ValueError:
                                 pass
-                            print(temp_v)
-                temp_dict_EARFCN.clear()
 
+                        print(header_row, file=temp_result_file)
+
+                        row_to_res = temp_row_dict.split(';')
+                        date_, time_, earfcn, = row_to_res[0], row_to_res[1][:8], row_to_res[9]
+                        frequency_, pci, mcc, mnc = f'{row_to_res[10][:4]}.{row_to_res[10][4]}', row_to_res[11], row_to_res[12], row_to_res[13]
+                        tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
+                        mib_dl_bandwidth_mhz_ = row_to_res[32]
+
+                        print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
+                        print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power, mib_dl_bandwidth_mhz_]), file=temp_result_file)
+                        print('\n', file=temp_result_file)
+
+                temp_dict_EARFCN.clear()
+                print()
             except FileExistsError:
                 pass
 
+def convert_to_img():
+    test_csv_file = glob.glob('result_folder\\453535\*.csv')
+    print(test_csv_file)
+    my_data = genfromtxt(test_csv_file, delimiter=',')
+    print(my_data)
+    print(BASE_STATION)
 
-export_file = glob.glob('source_folder\*.csv')
-bs_file = glob.glob('source_folder\*.txt')
 
-search_row(export_file[0], bs_file[0])
+if __name__ == "__main__":
 
-# ['15.05.2023;15:10:29.969;1686820229;45.077795;39.015200;19.11;34.16;176.09;10;38750;2310000000;196;250;20;27013;59307298;231669;34;;7;-71.12;11.97;-94.97;-17.13;-16.43;239.37;0.000002054501;2233662;no;no;4;;20.0;']
-# [';;;;;;;;;;;;;;;;231669;34;;7;-71.12;11.97;-94.97;-17.13;-16.43;239.37;0.000002054501;2233662;no;no;4;;20.0;']
-# count ';' for num_bs
+    export_file = glob.glob('source_folder\*.csv')
+    bs_file = glob.glob('source_folder\*.txt')
 
-#from datetime import datetime
-# time_now = f'{cur_time.day:02}_{cur_time.month:02}_{cur_time.year}__{cur_time.hour:02}_{cur_time.minute:02}_{cur_time.second:02}'
-#cur_time = datetime.now()
-
-#tecRaw_in.seek(520)
-
-#print(f'используемые файлы: {export_file}, {bs_file}')
+    search_row(export_file[0], bs_file[0])
+    convert_to_img()
