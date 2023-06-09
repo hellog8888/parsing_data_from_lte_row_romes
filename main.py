@@ -4,7 +4,8 @@ import os
 import datetime
 from numpy import genfromtxt
 
-BASE_STATION = []
+BASE_STATION_LIST = []
+BASE_STATION_OPERATOR = dict()
 
 def measure_time(func):
     def wrapper(*args, **kwargs):
@@ -27,24 +28,26 @@ def search_row(tecRaw_file, bs_list_file):
         header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
 
         for r in bs_nums:
-            BASE_STATION.append(r.strip())
-        print(f'номера бс: {BASE_STATION}')
+            BASE_STATION_LIST.append(r.strip())
+        print(f'номера бс: {BASE_STATION_LIST}')
         print()
 
         for row in csv.reader(tecRaw_in, delimiter=','):
             count += 1
             if count > 383:
+                temp_row_operator = row[0].split(';')[13]
                 temp_row = row[0].split(';')[16]
-                if temp_row in BASE_STATION:
+                if temp_row in BASE_STATION_LIST:
                     temp_row_from_reader.append(*row)
+                    BASE_STATION_OPERATOR[temp_row] = BASE_STATION_OPERATOR.get(temp_row, temp_row_operator)
 
-        for i in BASE_STATION:
+        for i in BASE_STATION_LIST:
             try:
                 os.mkdir(f'result_folder\{i}')
             except FileExistsError:
                 pass
 
-        for i in BASE_STATION:
+        for i in BASE_STATION_LIST:
             try:
                 with open(f'result_folder\{i}\{i}.csv', 'w') as temp_result_file:
 
@@ -87,7 +90,7 @@ def convert_to_img():
     print(test_csv_file)
     my_data = genfromtxt(test_csv_file, delimiter=',')
     print(my_data)
-    print(BASE_STATION)
+    print(BASE_STATION_LIST)
 
 
 if __name__ == "__main__":
@@ -96,4 +99,7 @@ if __name__ == "__main__":
     bs_file = glob.glob('source_folder\*.txt')
 
     search_row(export_file[0], bs_file[0])
-    convert_to_img()
+    print(BASE_STATION_OPERATOR)
+    #convert_to_img()
+
+# +107 power and -107 power
