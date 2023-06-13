@@ -88,6 +88,8 @@ def search_row(tecRaw_file, bs_list_file):
                 os.mkdir(f'result_folder\{i}_{DICT_OPERATOR[BASE_STATION_OPERATOR[i]]}')
             except FileExistsError:
                 pass
+            except KeyError:
+                pass
 
         for i in BASE_STATION_LIST:
             try:
@@ -131,6 +133,8 @@ def search_row(tecRaw_file, bs_list_file):
                 print()
             except FileExistsError:
                 pass
+            except KeyError:
+                pass
 
         for i in BASE_STATION_LIST:
             try:
@@ -138,6 +142,8 @@ def search_row(tecRaw_file, bs_list_file):
                 #path_to_folder = f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt'
                 convert_to_img(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt', f'result_folder\{i}_{name_operator}\{i}_{name_operator}')
             except FileExistsError:
+                pass
+            except KeyError:
                 pass
 
 
