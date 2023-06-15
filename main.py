@@ -52,7 +52,7 @@ def convert_to_img(file_name, path_to_save=''):
     with open(file_name, 'r') as file:
         count_line = 0
         for line in file.readlines():
-            count_line += 1
+            date_x, time_x, earfcn_x, freq_x, *other_x = line.strip().split('|')
 
             # cоздаем объект Image и объект ImageDraw
             image = Image.new('RGB', (width, height), color=bg_color)
@@ -62,7 +62,7 @@ def convert_to_img(file_name, path_to_save=''):
             draw.text((30, 47), f'{header_to_img}\n{line_separator}\n{line}', fill=text_color, font=font)
 
             # cохраняем изображение в файл
-            image.save(f'{path_to_save_file}_{count_line}.png')
+            image.save(f'{path_to_save_file}_{freq_x.strip()}.png')
 
 
 @measure_time
