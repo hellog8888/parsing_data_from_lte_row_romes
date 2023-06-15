@@ -79,7 +79,8 @@ def search_row(tecRaw_file, bs_list_file):
 
         for row in csv.reader(tecRaw_in, delimiter=','):
             count += 1
-            if count > 383:
+            #if lte_gsm_umts 495 or 383 if only lte
+            if count > 495:
                 temp_row_operator = row[0].split(';')[13]
                 temp_row = row[0].split(';')[16]
                 if temp_row in BASE_STATION_LIST:
@@ -231,6 +232,11 @@ if __name__ == "__main__":
     bs_file = glob.glob('source_folder\*.txt')
 
     search_row(export_file[0], bs_file[0])
+
+    # try:
+    #     search_row(export_file[0], bs_file[0])
+    # except IndexError:
+    #     print("Возможно в папке source отсутвствуют нужные файлы, проверьте папку")
 
 # add_info:
 # +107 power and -107 power convert for spectre
