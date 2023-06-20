@@ -83,7 +83,7 @@ def convert_to_postgres(file_open):
                                         Адрес                     varchar(230),
                                         ТИП_РЭС                   varchar(5),
                                         Владелец                  varchar(11),
-                                        Широта                    varchar(8),
+                                        Широта                    varchar(9),
                                         Долгота                   varchar(9),
                                         Частоты                   varchar(756),
                                         Дополнительные_параметры  varchar(490),
@@ -103,10 +103,7 @@ def convert_to_postgres(file_open):
                         value = sheet.cell(row, col).value
                         data.append(value)
 
-                    temp_insert = (data[1], data[2], dict_ETC[data[3]], data[5], dict_for_operator[data[6]], data[7], data[8], data[10], data[11], data[17], f'{data[18]} {data[19]}')
-
-                    #insert_script = f"INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота, Частоты, Дополнительные_параметры, Классы_излучения, Серия_Номер_РЗ_СоР) VALUES ({temp_insert})"
-                    cur.execute(f"INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота, Частоты, Дополнительные_параметры, Классы_излучения, Серия_Номер_РЗ_СоР) VALUES ({temp_insert})")
+                    cur.execute("INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота) VALUES (%s, %s, %s, %s, %s, %s)", (str(data[1]), str(data[2]), str(dict_ETC[data[3]]), str(data[5]), str(dict_for_operator[data[6]]), str(data[7]),))
 
                     data.clear()
 
