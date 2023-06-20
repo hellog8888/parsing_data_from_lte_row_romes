@@ -3,6 +3,7 @@ import datetime
 import glob
 import openpyxl
 import warnings
+
 warnings.simplefilter("ignore")
 
 dict_for_operator = \
@@ -40,6 +41,7 @@ dict_ETC = {
 
 file_xlxl_1 = glob.glob('source_folder\*.xlsx')
 
+
 def measure_time(func):
     def wrapper(*args, **kwargs):
         start_time = datetime.datetime.now()
@@ -48,7 +50,9 @@ def measure_time(func):
         elapsed_time = end_time - start_time
         print(f"Execution time: {elapsed_time}")
         return result
+
     return wrapper
+
 
 @measure_time
 def convert_to_postgres(file_open):
@@ -67,17 +71,26 @@ def convert_to_postgres(file_open):
                 user=username,
                 password=pwd,
                 port=port_id
-            ) as conn:
+        ) as conn:
 
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
 
+                #удалить такблицу (не считать ошибкой)
                 cur.execute('DROP TABLE IF EXISTS cellular')
 
                 create_script = """ CREATE TABLE IF NOT EXISTS cellular (
-                                        id        int PRIMARY KEY,
-                                        name      varchar(40) NOT NULL,
-                                        salary    int,
-                                        dept_id   varchar(30)); """
+                                        РЭС                       varchar(41),
+                                        Адрес                     varchar(230),
+                                        ТИП_РЭС                   varchar(5),
+                                        Владелец                  varchar(11),
+                                        Широта                    varchar(8),
+                                        Долгота                   varchar(9),
+                                        Частоты                   varchar(756),
+                                        Дополнительные_параметры  varchar(490),
+                                        Классы_излучения          varchar(53),
+                                        Серия_Номер_РЗ_СоР        varchar(13))
+                                """
+
                 cur.execute(create_script)
 
                 file_to_read = openpyxl.load_workbook(file_open, data_only=True)
@@ -89,15 +102,13 @@ def convert_to_postgres(file_open):
                     for col in range(1, sheet.max_column + 1):
                         value = sheet.cell(row, col).value
                         data.append(value)
-                    cursor.execute("INSERT INTO cellular VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", (
-                    data[1], data[2], dict_ETC[data[3]], data[5], dict_for_operator[data[6]], data[7], data[8],
-                    data[10], data[11], data[17], f'{data[18]} {data[19]}'))
 
-                insert_script = 'INSERT INTO cellular (id, name, salary, dept_id) VALUES (%s, %s, %s, %s)'
-                insert_values = [(1, 'James', 12000, 'D1'), (2, 'Robin', 15000, 'D1'), (3, 'Xavier', 12000, 'D2')]
+                    temp_insert = (data[1], data[2], dict_ETC[data[3]], data[5], dict_for_operator[data[6]], data[7], data[8], data[10], data[11], data[17], f'{data[18]} {data[19]}')
 
-                for record in insert_values:
-                    cur.execute(insert_script, record)
+                    #insert_script = f"INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота, Частоты, Дополнительные_параметры, Классы_излучения, Серия_Номер_РЗ_СоР) VALUES ({temp_insert})"
+                    cur.execute(f"INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота, Частоты, Дополнительные_параметры, Классы_излучения, Серия_Номер_РЗ_СоР) VALUES ({temp_insert})")
+
+                    data.clear()
 
                 conn.commit()
 
@@ -109,6 +120,4 @@ def convert_to_postgres(file_open):
             conn.close()
 
 
-convert_to_postgres(file_xlxl_1)
-
-#cursor.execute('CREATE TABLE IF NOT EXISTS cellular (РЭС, Адрес, ТИП_РЭС, Состояние, Владелец, Широта, Долгота, Частоты, Дополнительные_параметры, Классы_излучения, Серия_Номер_РЗ_СоР)')
+convert_to_postgres(file_xlxl_1[0])
