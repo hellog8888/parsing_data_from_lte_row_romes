@@ -52,7 +52,7 @@ def convert_to_img(file_name, path_to_save=''):
     with open(file_name, 'r') as file:
         count_line = 0
         for line in file.readlines():
-            date_x, time_x, earfcn_x, freq_x, *other_x = line.strip().split('|')
+            count_line += 1
 
             # cоздаем объект Image и объект ImageDraw
             image = Image.new('RGB', (width, height), color=bg_color)
@@ -62,7 +62,7 @@ def convert_to_img(file_name, path_to_save=''):
             draw.text((30, 47), f'{header_to_img}\n{line_separator}\n{line}', fill=text_color, font=font)
 
             # cохраняем изображение в файл
-            image.save(f'{path_to_save_file}_{freq_x.strip()}.png')
+            image.save(f'{path_to_save_file}_{count_line}.png')
 
 
 @measure_time
@@ -74,13 +74,11 @@ def search_row(tecRaw_file, bs_list_file):
         temp_dict_EARFCN = dict()
         header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
 
-        for i in bs_nums:
-            BASE_STATION_LIST.append(i.strip())
+        BASE_STATION_LIST = set(s.strip() for s in bs_nums)
 
         for row in csv.reader(tecRaw_in, delimiter=','):
             count += 1
-            #if lte_gsm_umts 495 or 383 if only lte
-            if count > 495:
+            if count > 421:
                 temp_row_operator = row[0].split(';')[13]
                 temp_row = row[0].split(';')[16]
                 if temp_row in BASE_STATION_LIST:
@@ -232,11 +230,6 @@ if __name__ == "__main__":
     bs_file = glob.glob('source_folder\*.txt')
 
     search_row(export_file[0], bs_file[0])
-
-    # try:
-    #     search_row(export_file[0], bs_file[0])
-    # except IndexError:
-    #     print("Возможно в папке source отсутвствуют нужные файлы, проверьте папку")
 
 # add_info:
 # +107 power and -107 power convert for spectre
