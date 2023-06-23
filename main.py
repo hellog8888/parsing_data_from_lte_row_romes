@@ -8,7 +8,6 @@ BASE_STATION_LIST = []
 BASE_STATION_OPERATOR = dict()
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
 
-
 def measure_time(func):
     def wrapper(*args, **kwargs):
         start_time = datetime.datetime.now()
@@ -62,8 +61,7 @@ def convert_to_img(file_name, path_to_save=''):
             draw.text((30, 47), f'{header_to_img}\n{line_separator}\n{line}', fill=text_color, font=font)
 
             # cохраняем изображение в файл
-            image.save(f'{path_to_save_file}_{count_line}.png')
-
+            image.save(f'{path_to_save_file}_{line.split("|")[3].strip()}.png')
 
 def base_station_get_from_csv(file_csv):
     temp_file = []
@@ -74,7 +72,8 @@ def base_station_get_from_csv(file_csv):
     for row in csv.reader(file_csv, delimiter=','):
         count_line += 1
         try:
-            if row[0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
+            if row[
+                0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
                 flag = True
                 break
         except IndexError:
@@ -93,16 +92,12 @@ def base_station_get_from_csv(file_csv):
 @measure_time
 def search_row(tecRaw_file):
     with open(tecRaw_file) as tecRaw_in:
-
         count = 0
         temp_row_from_reader = []
         temp_dict_EARFCN = dict()
         header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
 
         BASE_STATION_LIST = base_station_get_from_csv(tecRaw_in)
-
-        print(len(BASE_STATION_LIST))
-        print(BASE_STATION_LIST)
 
     with open(tecRaw_file) as tecRaw_in:
         for row in csv.reader(tecRaw_in, delimiter=','):
@@ -114,7 +109,7 @@ def search_row(tecRaw_file):
                     temp_row_from_reader.append(*row)
                     BASE_STATION_OPERATOR[temp_row] = BASE_STATION_OPERATOR.get(temp_row, temp_row_operator)
 
-        # создаем папки
+        # create folders
         for i in BASE_STATION_LIST:
             try:
                 os.mkdir(f'result_folder\{i}_{DICT_OPERATOR[BASE_STATION_OPERATOR[i]]}')
@@ -123,7 +118,6 @@ def search_row(tecRaw_file):
             except KeyError:
                 pass
 
-        #
         for i in BASE_STATION_LIST:
             try:
                 name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
@@ -152,7 +146,7 @@ def search_row(tecRaw_file):
                         row_to_res = temp_row_dict.split(';')
                         date_, time_, earfcn, = row_to_res[0], row_to_res[1][:8], row_to_res[9]
                         frequency_, pci, mcc, mnc = f'{row_to_res[10][:4]}.{row_to_res[10][4]}', row_to_res[11], \
-                                                    row_to_res[12], row_to_res[13]
+                            row_to_res[12], row_to_res[13]
                         tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                         mib_dl_bandwidth_mhz_ = row_to_res[32]
 
