@@ -65,17 +65,46 @@ def convert_to_img(file_name, path_to_save=''):
             image.save(f'{path_to_save_file}_{count_line}.png')
 
 
+def base_station_get_from_csv(file_csv):
+    temp_file = []
+    flag = False
+    count_line = 0
+    flag_count = 0
+
+    for row in csv.reader(file_csv, delimiter=','):
+        count_line += 1
+        try:
+            if row[0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
+                flag = True
+                break
+        except IndexError:
+            continue
+
+    if flag:
+        for row in csv.reader(file_csv, delimiter=','):
+            flag_count += 1
+            if flag_count >= count_line:
+                temp_file.append(row[0].split(';')[16])
+    result = set(i for i in temp_file if i != '')
+
+    return list(result)
+
+
 @measure_time
-def search_row(tecRaw_file, bs_list_file):
-    with open(tecRaw_file) as tecRaw_in, open(bs_list_file, 'r') as bs_nums:
+def search_row(tecRaw_file):
+    with open(tecRaw_file) as tecRaw_in:
 
         count = 0
         temp_row_from_reader = []
         temp_dict_EARFCN = dict()
         header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
 
-        BASE_STATION_LIST = set(s.strip() for s in bs_nums)
+        BASE_STATION_LIST = base_station_get_from_csv(tecRaw_in)
 
+        print(len(BASE_STATION_LIST))
+        print(BASE_STATION_LIST)
+
+    with open(tecRaw_file) as tecRaw_in:
         for row in csv.reader(tecRaw_in, delimiter=','):
             count += 1
             if count > 421:
@@ -161,7 +190,8 @@ def search_row(tecRaw_file, bs_list_file):
                     for line in temp_file_to_xml:
                         date_x, time_x, earfcn_x, freq_x, *other_x, bandwidth_x = line.strip().split('|')
 
-                        with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml', 'w') as temp_result_file_xml:
+                        with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
+                                  'w') as temp_result_file_xml:
                             body_spectre_0 = f'<?xml version="1.0" encoding="Windows-1251"?>'
                             print(body_spectre_0, file=temp_result_file_xml)
                             body_spectre_1 = f'<Result>'
@@ -227,9 +257,9 @@ def search_row(tecRaw_file, bs_list_file):
 
 if __name__ == "__main__":
     export_file = glob.glob('source_folder\*.csv')
-    bs_file = glob.glob('source_folder\*.txt')
 
-    search_row(export_file[0], bs_file[0])
+    search_row(export_file[0])
+    # base_station_get_from_csv(export_file[0])
 
 # add_info:
 # +107 power and -107 power convert for spectre
