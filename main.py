@@ -8,6 +8,7 @@ BASE_STATION_LIST = []
 BASE_STATION_OPERATOR = dict()
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
 
+
 def measure_time(func):
     def wrapper(*args, **kwargs):
         start_time = datetime.datetime.now()
@@ -23,12 +24,12 @@ def measure_time(func):
 def convert_to_img(file_name, path_to_save=''):
     path_to_save_file = path_to_save
 
-    # Задаем размеры изображения и цвет фона
+    # Размер изображения, цвет фона
     width = 1830
     height = 180
     bg_color = (255, 255, 255)
 
-    # Определяем шрифт, размер и цвет текста
+    # Шрифт, размер, цвет текста
     font_size = 30
     font = ImageFont.truetype("arial.ttf", font_size)
     text_color = (0, 0, 0)
@@ -49,59 +50,67 @@ def convert_to_img(file_name, path_to_save=''):
     line_separator = '-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------'
 
     with open(file_name, 'r') as file:
-        count_line = 0
         for line in file.readlines():
-            count_line += 1
 
-            # cоздаем объект Image и объект ImageDraw
             image = Image.new('RGB', (width, height), color=bg_color)
             draw = ImageDraw.Draw(image)
 
             # смещение по размеру изображения
             draw.text((30, 47), f'{header_to_img}\n{line_separator}\n{line}', fill=text_color, font=font)
 
-            # cохраняем изображение в файл
             image.save(f'{path_to_save_file}_{line.split("|")[3].strip()}.png')
 
-def base_station_get_from_csv(file_csv):
-    temp_file = []
-    flag = False
-    count_line = 0
-    flag_count = 0
+#одинаковые БС + в ОЗУ координаты
+def base_station_get_from_export_romes(file_txt):
+    with open(file_txt, 'r') as file_txt_r:
+         return set([line[line.strip().find(':') + 1:line.strip().find('/')] for line in file_txt_r if line.startswith('eNodeB') and line.strip().split(';')[13] != 11])
 
-    for row in csv.reader(file_csv, delimiter=','):
-        count_line += 1
+
+def create_folders(data):
+    for i in data:
         try:
-            if row[
-                0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
-                flag = True
-                break
-        except IndexError:
-            continue
-
-    if flag:
-        for row in csv.reader(file_csv, delimiter=','):
-            flag_count += 1
-            if flag_count >= count_line:
-                temp_file.append(row[0].split(';')[16])
-    result = set(i for i in temp_file if i != '')
-
-    return list(result)
-
+            os.mkdir(f'result_folder\{i}_{DICT_OPERATOR[BASE_STATION_OPERATOR[i]]}')
+        except FileExistsError:
+            pass
+        except KeyError:
+            pass
 
 @measure_time
 def search_row(tecRaw_file):
-    with open(tecRaw_file) as tecRaw_in:
-        count = 0
-        temp_row_from_reader = []
-        temp_dict_EARFCN = dict()
-        header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
+    count = 0
+    temp_row_from_reader = []
+    temp_dict_EARFCN = dict()
+    header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
 
-        BASE_STATION_LIST = base_station_get_from_csv(tecRaw_in)
+    # ПЕРЕДЕЛАТЬ ДЛЯ ПОИСКА
+    # def base_station_get_from_csv(file_csv):
+    #     temp_file = []
+    #     flag = False
+    #     count_line = 0
+    #     flag_count = 0
+    #
+    #     with open(file_csv) as file_csv_r:
+    #         for row in csv.reader(file_csv_r, delimiter=','):
+    #             count_line += 1
+    #             try:
+    #                 if row[0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
+    #                     flag = True
+    #                     break
+    #             except IndexError:
+    #                 continue
+    #
+    #         if flag:
+    #             for row in csv.reader(file_csv_r, delimiter=','):
+    #                 flag_count += 1
+    #                 if flag_count >= count_line:
+    #                     temp_file.append(row[0].split(';')[16])
+    #
+    #     return list(set(i for i in temp_file if i != ''))
 
     with open(tecRaw_file) as tecRaw_in:
         for row in csv.reader(tecRaw_in, delimiter=','):
             count += 1
+            # ИСПРАВИТЬ !!! УБРАТЬ СЧЕТЧИК заменить на поиск в base_station_get_from_csv
             if count > 421:
                 temp_row_operator = row[0].split(';')[13]
                 temp_row = row[0].split(';')[16]
@@ -109,14 +118,7 @@ def search_row(tecRaw_file):
                     temp_row_from_reader.append(*row)
                     BASE_STATION_OPERATOR[temp_row] = BASE_STATION_OPERATOR.get(temp_row, temp_row_operator)
 
-        # create folders
-        for i in BASE_STATION_LIST:
-            try:
-                os.mkdir(f'result_folder\{i}_{DICT_OPERATOR[BASE_STATION_OPERATOR[i]]}')
-            except FileExistsError:
-                pass
-            except KeyError:
-                pass
+        create_folders(BASE_STATION_LIST)
 
         for i in BASE_STATION_LIST:
             try:
@@ -169,7 +171,6 @@ def search_row(tecRaw_file):
         for i in BASE_STATION_LIST:
             try:
                 name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-                # path_to_folder = f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt'
                 convert_to_img(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt',
                                f'result_folder\{i}_{name_operator}\{i}_{name_operator}')
             except FileExistsError:
@@ -250,10 +251,11 @@ def search_row(tecRaw_file):
 
 
 if __name__ == "__main__":
-    export_file = glob.glob('source_folder\*.csv')
 
-    search_row(export_file[0])
-    # base_station_get_from_csv(export_file[0])
+    export_file_csv = glob.glob('source_folder\*.csv')
+    export_file_txt = glob.glob('source_folder\*.txt')
 
-# add_info:
+    BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
+    search_row(export_file_csv[0])
+
 # +107 power and -107 power convert for spectre
