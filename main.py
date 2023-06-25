@@ -60,7 +60,6 @@ def convert_to_img(file_name, path_to_save=''):
 
             image.save(f'{path_to_save_file}_{line.split("|")[3].strip()}.png')
 
-#одинаковые БС + в ОЗУ координаты
 def base_station_get_from_export_romes(file_txt):
     with open(file_txt, 'r') as file_txt_r:
          return set([line[line.strip().find(':') + 1:line.strip().find('/')] for line in file_txt_r if line.startswith('eNodeB') and line.strip().split(';')[13] != 11])
