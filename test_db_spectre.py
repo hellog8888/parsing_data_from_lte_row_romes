@@ -28,18 +28,17 @@ dict_for_operator = \
         'Публичное акционерное общество \"Вымпел-Коммуникации\"': 'ВымпелКом'
     }
 
-dict_ETC = {
-    '18.1.1.3.': 'GSM',
-    '18.1.1.8.': 'GSM',
-    '18.1.1.5.': 'UMTS',
-    '18.1.1.6.': 'UMTS',
-    '18.7.1.': 'LTE',
-    '18.7.4.': 'LTE',
-    '18.7.5.': '5G NR',
-    '19.2.': 'РРС'
-}
-
-file_xlxl_1 = glob.glob('source_folder\*.xlsx')
+dict_ETC = \
+    {
+        '18.1.1.3.': 'GSM',
+        '18.1.1.8.': 'GSM',
+        '18.1.1.5.': 'UMTS',
+        '18.1.1.6.': 'UMTS',
+        '18.7.1.': 'LTE',
+        '18.7.4.': 'LTE',
+        '18.7.5.': '5G NR',
+        '19.2.': 'РРС'
+    }
 
 
 def measure_time(func):
@@ -56,9 +55,8 @@ def measure_time(func):
 
 @measure_time
 def convert_to_postgres(file_open):
-
     hostname = 'localhost'
-    database = 'mydb'
+    database = 'eirs'
     username = 'postgres'
     pwd = '1234'
     port_id = 5432
@@ -75,7 +73,7 @@ def convert_to_postgres(file_open):
 
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
 
-                #удалить такблицу (не считать ошибкой)
+                # удалить таблицу (не считать ошибкой)
                 cur.execute('DROP TABLE IF EXISTS cellular')
 
                 create_script = """ CREATE TABLE IF NOT EXISTS cellular (
@@ -103,7 +101,10 @@ def convert_to_postgres(file_open):
                         value = sheet.cell(row, col).value
                         data.append(value)
 
-                    cur.execute("INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота) VALUES (%s, %s, %s, %s, %s, %s)", (str(data[1]), str(data[2]), str(dict_ETC[data[3]]), str(data[5]), str(dict_for_operator[data[6]]), str(data[7]),))
+                    cur.execute(
+                         "INSERT INTO cellular (РЭС, Адрес, ТИП_РЭС, Владелец, Широта, Долгота, Частоты, Дополнительные_параметры, Классы_излучения, Серия_Номер_РЗ_СоР) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                         (str(data[1]), str(data[2]), str(dict_ETC[data[3]]), str(dict_for_operator[data[6]]),
+                          str(data[7]), str(data[8]), str(data[10]), str(data[11]), str(data[17]), f'{data[18]} {data[19]}'))
 
                     data.clear()
 
@@ -111,10 +112,10 @@ def convert_to_postgres(file_open):
 
     except Exception as error:
         print(error)
-
     finally:
         if conn is not None:
             conn.close()
 
 
+file_xlxl_1 = glob.glob('source_folder\*.xlsx')
 convert_to_postgres(file_xlxl_1[0])
