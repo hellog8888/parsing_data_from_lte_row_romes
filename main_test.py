@@ -105,19 +105,16 @@ def search_row(tecRaw_file):
                             temp_row_from_reader.append(*row)
                     except KeyError:
                         pass
-                        #BASE_STATION_OPERATOR[temp_row_num_operator] = BASE_STATION_OPERATOR.get(temp_row_num_operator, temp_row_operator)
 
     create_folders(BASE_STATION_LIST)
-    ####### ЗДЕСЬ #######
     for i in BASE_STATION_LIST:
         try:
-            name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.csv', 'w') as temp_result_file, \
-                    open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt', 'w') as temp_result_file_txt:
+            with open(f'result_folder\{i}\{i}.csv', 'w') as temp_result_file, \
+                    open(f'result_folder\{i}\{i}.txt', 'w') as temp_result_file_txt:
 
                 for x in temp_row_from_reader:
                     temp_x = x.split(';')
-                    if temp_x[16] == i:
+                    if f'{temp_x[16]}_{DICT_OPERATOR[temp_x[13]]}' == i:
                         temp_dict_EARFCN[temp_x[9]] = temp_dict_EARFCN.get(temp_x[9], []) + [x]
 
                 for k, v in temp_dict_EARFCN.items():
@@ -159,23 +156,20 @@ def search_row(tecRaw_file):
 
     for i in BASE_STATION_LIST:
         try:
-            name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            convert_to_img(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt',
-                           f'result_folder\{i}_{name_operator}\{i}_{name_operator}')
+            convert_to_img(f'result_folder\{i}\{i}.txt',
+                           f'result_folder\{i}\{i}')
         except FileExistsError:
             pass
         except KeyError:
             pass
-
+    ##### ЗДЕСЬ ######
     for i in BASE_STATION_LIST:
         try:
-            name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt') as temp_file_to_xml:
+            with open(f'result_folder\{i}\{i}.txt') as temp_file_to_xml:
                 for line in temp_file_to_xml:
                     date_x, time_x, earfcn_x, freq_x, *other_x, bandwidth_x = line.strip().split('|')
 
-                    with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
-                              'w') as temp_result_file_xml:
+                    with open(f'result_folder\{i}\{i}_{freq_x.strip()}.xml', 'w') as temp_result_file_xml:
                         body_spectre_0 = f'<?xml version="1.0" encoding="Windows-1251"?>'
                         print(body_spectre_0, file=temp_result_file_xml)
                         body_spectre_1 = f'<Result>'
