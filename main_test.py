@@ -5,7 +5,6 @@ import datetime
 from PIL import Image, ImageDraw, ImageFont
 
 BASE_STATION_LIST = []
-BASE_STATION_OPERATOR = dict()
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
 
 
@@ -162,7 +161,6 @@ def search_row(tecRaw_file):
             pass
         except KeyError:
             pass
-    ##### ЗДЕСЬ ######
     for i in BASE_STATION_LIST:
         try:
             with open(f'result_folder\{i}\{i}.txt') as temp_file_to_xml:
