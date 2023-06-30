@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 BASE_STATION_LIST = []
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
-
+BASE_STATION_OPERATOR = dict()
 
 def measure_time(func):
     def wrapper(*args, **kwargs):
