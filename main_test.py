@@ -23,12 +23,10 @@ def measure_time(func):
 def convert_to_img(file_name, path_to_save=''):
     path_to_save_file = path_to_save
 
-    # Размер изображения, цвет фона
     width = 1830
     height = 180
     bg_color = (255, 255, 255)
 
-    # Шрифт, размер, цвет текста
     font_size = 30
     font = ImageFont.truetype("arial.ttf", font_size)
     text_color = (0, 0, 0)
@@ -61,13 +59,14 @@ def convert_to_img(file_name, path_to_save=''):
 
 def base_station_get_from_export_romes(file_txt):
     with open(file_txt, 'r') as file_txt_r:
-        return list(set([f"{line[line.strip().find(':') + 1:line.strip().find('/')]}_{DICT_OPERATOR[line.strip().split(';')[13]]}" for line in file_txt_r if line.startswith('eNodeB') and line.strip().split(';')[13] != '11']))
+        return list(set([line[line.strip().find(':') + 1:line.strip().find('/')] for line in file_txt_r if
+                    line.startswith('eNodeB') and line.strip().split(';')[13] != 11]))
 
 
 def create_folders(data):
-    for num_bs_operator in data:
+    for num_bs in data:
         try:
-            os.mkdir(f'result_folder\{num_bs_operator}')
+            os.mkdir(f'result_folder\{num_bs}_{DICT_OPERATOR[BASE_STATION_OPERATOR[num_bs]]}')
         except FileExistsError:
             pass
         except KeyError:
@@ -98,22 +97,23 @@ def search_row(tecRaw_file):
             for row in csv.reader(tecRaw_in, delimiter=','):
                 flag_count += 1
                 if flag_count >= count_line:
-                    try:
-                        temp_row_num_operator = f"{row[0].split(';')[16]}_{DICT_OPERATOR[row[0].split(';')[13]]}"
-                        if temp_row_num_operator in BASE_STATION_LIST:
-                            temp_row_from_reader.append(*row)
-                    except KeyError:
-                        pass
+                    temp_row_operator = row[0].split(';')[13]
+                    temp_row = row[0].split(';')[16]
+                    if temp_row in BASE_STATION_LIST:
+                        temp_row_from_reader.append(*row)
+                        BASE_STATION_OPERATOR[temp_row] = BASE_STATION_OPERATOR.get(temp_row, temp_row_operator)
 
     create_folders(BASE_STATION_LIST)
+
     for i in BASE_STATION_LIST:
         try:
-            with open(f'result_folder\{i}\{i}.csv', 'w') as temp_result_file, \
-                    open(f'result_folder\{i}\{i}.txt', 'w') as temp_result_file_txt:
+            name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
+            with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.csv', 'w') as temp_result_file, \
+                    open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt', 'w') as temp_result_file_txt:
 
                 for x in temp_row_from_reader:
                     temp_x = x.split(';')
-                    if f'{temp_x[16]}_{DICT_OPERATOR[temp_x[13]]}' == i:
+                    if temp_x[16] == i:
                         temp_dict_EARFCN[temp_x[9]] = temp_dict_EARFCN.get(temp_x[9], []) + [x]
 
                 for k, v in temp_dict_EARFCN.items():
@@ -137,13 +137,9 @@ def search_row(tecRaw_file):
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
-                    print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power,
-                          mib_dl_bandwidth_mhz_)
-                    print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power,
-                                    mib_dl_bandwidth_mhz_]), file=temp_result_file)
-                    print(
-                        f'{date_.center(0)} | {time_.center(0)} | {earfcn.center(12)} | {frequency_.center(12)} | {pci.center(3)} | {mcc.center(5)} | {mnc.center(7)} | {tac.center(0)} | {ci.center(0)} | {enodebid.center(12)} | {power.center(0)} | {mib_dl_bandwidth_mhz_.center(30)}',
-                        file=temp_result_file_txt)
+                    print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
+                    print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power, mib_dl_bandwidth_mhz_]), file=temp_result_file)
+                    print(f'{date_.center(0)} | {time_.center(0)} | {earfcn.center(12)} | {frequency_.center(12)} | {pci.center(3)} | {mcc.center(5)} | {mnc.center(7)} | {tac.center(0)} | {ci.center(0)} | {enodebid.center(12)} | {power.center(0)} | {mib_dl_bandwidth_mhz_.center(30)}', file=temp_result_file_txt)
                     print('\n', file=temp_result_file)
 
             temp_dict_EARFCN.clear()
@@ -155,19 +151,22 @@ def search_row(tecRaw_file):
 
     for i in BASE_STATION_LIST:
         try:
-            convert_to_img(f'result_folder\{i}\{i}.txt',
-                           f'result_folder\{i}\{i}')
+            name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
+            convert_to_img(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt',
+                           f'result_folder\{i}_{name_operator}\{i}_{name_operator}')
         except FileExistsError:
             pass
         except KeyError:
             pass
+
     for i in BASE_STATION_LIST:
         try:
-            with open(f'result_folder\{i}\{i}.txt') as temp_file_to_xml:
+            name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
+            with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt') as temp_file_to_xml:
                 for line in temp_file_to_xml:
                     date_x, time_x, earfcn_x, freq_x, *other_x, bandwidth_x = line.strip().split('|')
 
-                    with open(f'result_folder\{i}\{i}_{freq_x.strip()}.xml', 'w') as temp_result_file_xml:
+                    with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml', 'w') as temp_result_file_xml:
                         body_spectre_0 = f'<?xml version="1.0" encoding="Windows-1251"?>'
                         print(body_spectre_0, file=temp_result_file_xml)
                         body_spectre_1 = f'<Result>'
@@ -236,5 +235,3 @@ if __name__ == "__main__":
 
     BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
     search_row(export_file_csv[0])
-
-# +107 power and -107 power convert for spectre
