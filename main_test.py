@@ -6,7 +6,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 BASE_STATION_LIST = []
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
-
+BASE_STATION_OPERATOR = dict()
+BS_LIST_LAN_LON = dict()
 
 def measure_time(func):
     def wrapper(*args, **kwargs):
@@ -59,8 +60,14 @@ def convert_to_img(file_name, path_to_save=''):
 
 def base_station_get_from_export_romes(file_txt):
     with open(file_txt, 'r') as file_txt_r:
-        return list(set([line[line.strip().find(':') + 1:line.strip().find('/')] for line in file_txt_r if
+        return list(set([line[line.strip().find(':') + 1: line.strip().find('/')] for line in file_txt_r if
                     line.startswith('eNodeB') and line.strip().split(';')[13] != 11]))
+
+
+def bs_lan_lon_from_export_romes(file_txt):
+    with open(file_txt, 'r') as file_txt_r:
+        return {f"{k[k.strip().find(':') + 1:k.strip().find('/')]}_{k.strip().split(';')[13]}": f"{k.strip().split(';')[1]}_{k.strip().split(';')[2]}" for k in file_txt_r if
+                    k.startswith('eNodeB') and k.strip().split(';')[13] != 11}
 
 
 def create_folders(data):
@@ -230,8 +237,11 @@ def search_row(tecRaw_file):
             pass
 
 if __name__ == "__main__":
+
     export_file_csv = glob.glob('source_folder\*.csv')
     export_file_txt = glob.glob('source_folder\*.txt')
 
-    BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
-    search_row(export_file_csv[0])
+    #BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
+    BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
+    print(BS_LIST_LAN_LON)
+    #search_row(export_file_csv[0])
