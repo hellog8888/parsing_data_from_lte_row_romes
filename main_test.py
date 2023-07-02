@@ -63,12 +63,15 @@ def base_station_get_from_export_romes(file_txt):
         return list(set([line[line.strip().find(':') + 1: line.strip().find('/')] for line in file_txt_r if
                     line.startswith('eNodeB') and line.strip().split(';')[13] != 11]))
 
-
+#СОРТИРОВКА ПО ЗНАЧЕНИЮ
 def bs_lan_lon_from_export_romes(file_txt):
     with open(file_txt, 'r') as file_txt_r:
-        return {f"{k[k.strip().find(':') + 1:k.strip().find('/')]}_{k.strip().split(';')[13]}": f"{k.strip().split(';')[1]}_{k.strip().split(';')[2]}" for k in file_txt_r if
-                    k.startswith('eNodeB') and k.strip().split(';')[13] != 11}
-
+        temp_rows = dict()
+        for k in file_txt_r:
+            if k.startswith('eNodeB') and k.strip().split(';')[13] != '11':
+                t = f"{k[k.strip().find(':') + 1: k.strip().find('/')]}_{k.strip().split(';')[13]}"
+                temp_rows[t] = temp_rows.get(t, []) + [f"{k.strip().split(';')[1]};{k.strip().split(';')[2]};{k.strip().split(';')[4]};{k.strip().split(';')[5]}"]
+        [print(f'{k}: {v}') for k,v in temp_rows.items()]
 
 def create_folders(data):
     for num_bs in data:
@@ -242,6 +245,7 @@ if __name__ == "__main__":
     export_file_txt = glob.glob('source_folder\*.txt')
 
     #BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
+    #print(BASE_STATION_LIST)
     BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
     print(BS_LIST_LAN_LON)
     #search_row(export_file_csv[0])
