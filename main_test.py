@@ -2,6 +2,7 @@ import csv
 import glob
 import os
 import datetime
+import psycopg2
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -96,6 +97,66 @@ def create_folders(data):
         except KeyError:
             pass
 
+def query_data_from_database(data):
+    dict_for_operator = \
+        {
+            'Общество с ограниченной ответственностью «Скартел»': 'Скартел',
+            'Общество с ограниченной ответственностью \"Скартел\"': 'Скартел',
+
+            'Общество с ограниченной ответственностью \"Т2 Мобайл\"': 'Т2 Мобайл',
+            'Общество с ограниченной ответственностью «Т2 Мобайл»': 'Т2 Мобайл',
+
+            'Публичное акционерное общество «Мобильные ТелеСистемы»': 'МТС',
+            'Публичное акционерное общество \"Мобильные ТелеСистемы\"': 'МТС',
+
+            'Публичное акционерное общество \"МегаФон\"': 'МегаФон',
+            'Публичное акционерное общество «МегаФон»': 'МегаФон',
+
+            'Публичное акционерное общество \"Ростелеком\"': 'Ростелеком',
+            'Публичное акционерное общество «Ростелеком»': 'Ростелеком',
+            'Публичное акционерное общество междугородной и международной электрической связи \"Ростелеком\"': 'Ростелеком',
+
+            'Публичное акционерное общество «Вымпел-Коммуникации»': 'ВымпелКом',
+            'Публичное акционерное общество \"Вымпел-Коммуникации\"': 'ВымпелКом'
+        }
+
+    dict_ETC = \
+        {
+            '18.1.1.3.': 'GSM',
+            '18.1.1.8.': 'GSM',
+            '18.1.1.5.': 'UMTS',
+            '18.1.1.6.': 'UMTS',
+            '18.7.1.': 'LTE',
+            '18.7.4.': 'LTE',
+            '18.7.5.': '5G NR',
+            '19.2.': 'РРС'
+        }
+
+    hostname = 'localhost'
+    database = 'eirs'
+    username = 'postgres'
+    password = '1234'
+    port_id = 5432
+    connection = None
+
+    try:
+
+        connection = psycopg2.connect(dbname="eirs", user="postgres", password="1234", host="127.0.0.1")
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM people")
+
+        print(cursor.fetchall())
+
+        cursor.close()
+        connection.close()
+
+    except Exception as error:
+        print(error)
+
+    finally:
+        if connection is not None:
+            connection.close()
 
 @measure_time
 def search_row(tecRaw_file):
@@ -196,7 +257,7 @@ def search_row(tecRaw_file):
                     if temp_peleng_bs in BS_LIST_LAN_LON:
                         with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt', 'w') as file_with_coords:
                             print(f'{temp_peleng_bs}_{BS_LIST_LAN_LON[temp_peleng_bs]}', file=file_with_coords)
-                            
+
                     with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml', 'w') as temp_result_file_xml:
                         body_spectre_0 = f'<?xml version="1.0" encoding="Windows-1251"?>'
                         print(body_spectre_0, file=temp_result_file_xml)
@@ -267,5 +328,4 @@ if __name__ == "__main__":
 
     BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
     BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
-    #[print(f'{x}: {y}') for x,y in BS_LIST_LAN_LON.items()]
     search_row(export_file_csv[0])
