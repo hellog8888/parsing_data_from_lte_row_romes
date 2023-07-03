@@ -4,9 +4,18 @@ import os
 import datetime
 from PIL import Image, ImageDraw, ImageFont
 
-BASE_STATION_LIST = []
+
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
+
+DICT_FREQ = {'6175': '793.5', '6338': '809.8', '6350': '811.0',
+             '200': '2130.0', '350': '2145.0', '550': '2165.0',
+             '1275': '1812.5', '1575': '1842.5', '1425': '1827.5', '1850': '1870.0',
+             '2850': '2630.0', '3200': '2665.0', '3300': '2675.0', '3048': '2649.8', '3400': '2685.0',
+             '37900': '2585.0', '38100': '2605.0', '39550': '2390.0', '38750': '2310.0', '38950': '2330.0'}
+
+BASE_STATION_LIST = []
 BASE_STATION_OPERATOR = dict()
+BS_LIST_LAN_LON = dict()
 
 def measure_time(func):
     def wrapper(*args, **kwargs):
@@ -59,8 +68,23 @@ def convert_to_img(file_name, path_to_save=''):
 
 def base_station_get_from_export_romes(file_txt):
     with open(file_txt, 'r') as file_txt_r:
-        return list(set([line[line.strip().find(':') + 1:line.strip().find('/')] for line in file_txt_r if
+        return list(set([line[line.strip().find(':') + 1: line.strip().find('/')] for line in file_txt_r if
                     line.startswith('eNodeB') and line.strip().split(';')[13] != 11]))
+
+
+def bs_lan_lon_from_export_romes(file_txt):
+    with open(file_txt, 'r') as file_txt_r:
+        temp_rows = dict()
+
+        for k in file_txt_r:
+            if k.startswith('eNodeB') and k.strip().split(';')[13] != '11':
+                t = f"{k[k.strip().find(':') + 1: k.strip().find('/')]}_{k.strip().split(';')[13]}_{k.strip().split(';')[16]}"
+                temp_rows[t] = temp_rows.get(t, []) + [f"{k.strip().split(';')[1]};{k.strip().split(';')[2]};{k.strip().split(';')[4]};{k.strip().split(';')[5]}"]
+
+        temp_rows_2 = {k: sorted(v, key=lambda x: float(x.split(';')[2]))[0] for k, v in temp_rows.items()}
+        temp_rows_3 = {f"{k.split('_')[0]}_{DICT_OPERATOR[k.split('_')[1]]}_{DICT_FREQ[k.split('_')[2]]}": v for k, v in temp_rows_2.items() if v.split(';')[0] != '0'}
+
+        return temp_rows_3
 
 
 def create_folders(data):
@@ -137,13 +161,14 @@ def search_row(tecRaw_file):
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
-                    print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
+                    # show display
+                    #print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
                     print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power, mib_dl_bandwidth_mhz_]), file=temp_result_file)
                     print(f'{date_.center(0)} | {time_.center(0)} | {earfcn.center(12)} | {frequency_.center(12)} | {pci.center(3)} | {mcc.center(5)} | {mnc.center(7)} | {tac.center(0)} | {ci.center(0)} | {enodebid.center(12)} | {power.center(0)} | {mib_dl_bandwidth_mhz_.center(30)}', file=temp_result_file_txt)
                     print('\n', file=temp_result_file)
 
             temp_dict_EARFCN.clear()
-            print()
+            #print()
         except FileExistsError:
             pass
         except KeyError:
@@ -166,6 +191,12 @@ def search_row(tecRaw_file):
                 for line in temp_file_to_xml:
                     date_x, time_x, earfcn_x, freq_x, *other_x, bandwidth_x = line.strip().split('|')
 
+                    temp_peleng_bs = f"{i}_{name_operator}_{DICT_FREQ[earfcn_x.strip()]}"
+
+                    if temp_peleng_bs in BS_LIST_LAN_LON:
+                        with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt', 'w') as file_with_coords:
+                            print(f'{temp_peleng_bs}_{BS_LIST_LAN_LON[temp_peleng_bs]}', file=file_with_coords)
+                            
                     with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml', 'w') as temp_result_file_xml:
                         body_spectre_0 = f'<?xml version="1.0" encoding="Windows-1251"?>'
                         print(body_spectre_0, file=temp_result_file_xml)
@@ -230,8 +261,11 @@ def search_row(tecRaw_file):
             pass
 
 if __name__ == "__main__":
+
     export_file_csv = glob.glob('source_folder\*.csv')
     export_file_txt = glob.glob('source_folder\*.txt')
 
     BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
+    BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
+    #[print(f'{x}: {y}') for x,y in BS_LIST_LAN_LON.items()]
     search_row(export_file_csv[0])
