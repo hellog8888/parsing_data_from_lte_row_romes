@@ -17,6 +17,7 @@ BASE_STATION_LIST = []
 BASE_STATION_OPERATOR = dict()
 BS_LIST_LAN_LON = dict()
 
+
 def measure_time(func):
     def wrapper(*args, **kwargs):
         start_time = datetime.datetime.now()
@@ -156,12 +157,10 @@ def search_row(tecRaw_file):
 
                     row_to_res = temp_row_dict.split(';')
                     date_, time_, earfcn, = row_to_res[0], row_to_res[1][:8], row_to_res[9]
-                    frequency_, pci, mcc, mnc = f'{row_to_res[10][:4]}.{row_to_res[10][4]}', row_to_res[11], \
-                                                row_to_res[12], row_to_res[13]
+                    frequency_, pci, mcc, mnc = f'{row_to_res[10][:4]}.{row_to_res[10][4]}', row_to_res[11], row_to_res[12], row_to_res[13]
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
-                    # show display
                     #print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
                     print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power, mib_dl_bandwidth_mhz_]), file=temp_result_file)
                     print(f'{date_.center(0)} | {time_.center(0)} | {earfcn.center(12)} | {frequency_.center(12)} | {pci.center(3)} | {mcc.center(5)} | {mnc.center(7)} | {tac.center(0)} | {ci.center(0)} | {enodebid.center(12)} | {power.center(0)} | {mib_dl_bandwidth_mhz_.center(30)}', file=temp_result_file_txt)
@@ -267,5 +266,5 @@ if __name__ == "__main__":
 
     BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
     BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
-    #[print(f'{x}: {y}') for x,y in BS_LIST_LAN_LON.items()]
+  
     search_row(export_file_csv[0])
