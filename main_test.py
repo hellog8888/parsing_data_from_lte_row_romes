@@ -2,6 +2,8 @@ import csv
 import glob
 import os
 import datetime
+from idlelib import query
+
 import psycopg2
 from PIL import Image, ImageDraw, ImageFont
 
@@ -97,40 +99,7 @@ def create_folders(data):
         except KeyError:
             pass
 
-def query_data_from_database(data):
-    dict_for_operator = \
-        {
-            'Общество с ограниченной ответственностью «Скартел»': 'Скартел',
-            'Общество с ограниченной ответственностью \"Скартел\"': 'Скартел',
-
-            'Общество с ограниченной ответственностью \"Т2 Мобайл\"': 'Т2 Мобайл',
-            'Общество с ограниченной ответственностью «Т2 Мобайл»': 'Т2 Мобайл',
-
-            'Публичное акционерное общество «Мобильные ТелеСистемы»': 'МТС',
-            'Публичное акционерное общество \"Мобильные ТелеСистемы\"': 'МТС',
-
-            'Публичное акционерное общество \"МегаФон\"': 'МегаФон',
-            'Публичное акционерное общество «МегаФон»': 'МегаФон',
-
-            'Публичное акционерное общество \"Ростелеком\"': 'Ростелеком',
-            'Публичное акционерное общество «Ростелеком»': 'Ростелеком',
-            'Публичное акционерное общество междугородной и международной электрической связи \"Ростелеком\"': 'Ростелеком',
-
-            'Публичное акционерное общество «Вымпел-Коммуникации»': 'ВымпелКом',
-            'Публичное акционерное общество \"Вымпел-Коммуникации\"': 'ВымпелКом'
-        }
-
-    dict_ETC = \
-        {
-            '18.1.1.3.': 'GSM',
-            '18.1.1.8.': 'GSM',
-            '18.1.1.5.': 'UMTS',
-            '18.1.1.6.': 'UMTS',
-            '18.7.1.': 'LTE',
-            '18.7.4.': 'LTE',
-            '18.7.5.': '5G NR',
-            '19.2.': 'РРС'
-        }
+def query_data_from_database():
 
     hostname = 'localhost'
     database = 'eirs'
@@ -141,12 +110,12 @@ def query_data_from_database(data):
 
     try:
 
-        connection = psycopg2.connect(dbname="eirs", user="postgres", password="1234", host="127.0.0.1")
+        connection = psycopg2.connect(dbname=database, user=username, password=password, host=hostname)
         cursor = connection.cursor()
 
-        cursor.execute("SELECT * FROM people")
+        cursor.execute("SELECT * FROM cellular")
 
-        print(cursor.fetchall())
+        print(cursor.fetchmany(4))
 
         cursor.close()
         connection.close()
@@ -157,6 +126,7 @@ def query_data_from_database(data):
     finally:
         if connection is not None:
             connection.close()
+
 
 @measure_time
 def search_row(tecRaw_file):
@@ -326,6 +296,7 @@ if __name__ == "__main__":
     export_file_csv = glob.glob('source_folder\*.csv')
     export_file_txt = glob.glob('source_folder\*.txt')
 
-    BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
-    BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
-    search_row(export_file_csv[0])
+    #BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
+    #BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
+    #search_row(export_file_csv[0])
+    query_data_from_database()
