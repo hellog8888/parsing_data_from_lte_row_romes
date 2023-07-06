@@ -2,6 +2,7 @@ import csv
 import glob
 import os
 import datetime
+from math import trunc
 from idlelib import query
 
 import psycopg2
@@ -98,6 +99,35 @@ def create_folders(data):
             pass
         except KeyError:
             pass
+
+
+def toFixed(numObj, digits=0):
+    return f"{numObj:.{digits}f}"
+
+
+def convert_coords(file):
+    with open(file, 'r') as file_txt:
+        N, E, N_e, E_e = file_txt.read().split(';')
+
+        DD = int(N[0:2])
+        MM = trunc(float(N[2:]) * 60)
+        print(MM)
+        print(type(MM))
+
+        #SS = ((float(N) − DD) * 60 − int(MM) * 60
+
+        #print(f'{DD}"{MM}\'{SS}')
+
+    # N = dd[:2] + ' ' + dd[3:5] + ' ' + dd[5:7]
+    # E = dd[8:10] + ' ' + dd[11:13] + ' ' + dd[13:]
+    # d1, m1, s1 = N.split(' ')
+    # d2, m2, s2 = E.split(' ')
+    #
+    # try:
+    #     return f'{toFixed((int(d2) + int(m2) / 60 + int(s2) / 3600), 6)} {toFixed((int(d1) + int(m1) / 60 + int(s1) / 3600), 6)}'
+    # except ValueError:
+    #     pass
+
 
 def query_data_from_database():
 
@@ -226,7 +256,7 @@ def search_row(tecRaw_file):
 
                     if temp_peleng_bs in BS_LIST_LAN_LON:
                         with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt', 'w') as file_with_coords:
-                            print(f'{temp_peleng_bs}_{BS_LIST_LAN_LON[temp_peleng_bs]}', file=file_with_coords)
+                            print(f'{BS_LIST_LAN_LON[temp_peleng_bs]}', file=file_with_coords)
 
                     with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml', 'w') as temp_result_file_xml:
                         body_spectre_0 = f'<?xml version="1.0" encoding="Windows-1251"?>'
@@ -293,10 +323,14 @@ def search_row(tecRaw_file):
 
 if __name__ == "__main__":
 
-    export_file_csv = glob.glob('source_folder\*.csv')
-    export_file_txt = glob.glob('source_folder\*.txt')
+    #export_file_csv = glob.glob('source_folder\*.csv')
+    #export_file_txt = glob.glob('source_folder\*.txt')
+
+    test_file_txt = glob.glob('test\*.txt')[0]
 
     #BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
     #BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
     #search_row(export_file_csv[0])
-    query_data_from_database()
+
+    #query_data_from_database()
+    convert_coords(test_file_txt)
