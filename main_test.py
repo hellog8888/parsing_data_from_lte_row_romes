@@ -107,26 +107,19 @@ def toFixed(numObj, digits=0):
 
 def convert_coords(file):
     with open(file, 'r') as file_txt:
-        N, E, N_e, E_e = file_txt.read().split(';')
+        E, N, E_e, N_e = file_txt.read().split(';')
 
-        DD = int(N[0:2])
-        MM = trunc(float(N[2:]) * 60)
-        print(MM)
-        print(type(MM))
+        DD_N = trunc(float(N))
+        DD_E = trunc(float(E))
 
-        #SS = ((float(N) − DD) * 60 − int(MM) * 60
+        MM_N = trunc((float(N) - DD_N) * 60)
+        MM_E = trunc((float(E) - DD_E) * 60)
 
-        #print(f'{DD}"{MM}\'{SS}')
+        SS_N = trunc(((float(N) - DD_N) * 60 - MM_N) * 60)
+        SS_E = trunc(((float(E) - DD_E) * 60 - MM_E) * 60)
 
-    # N = dd[:2] + ' ' + dd[3:5] + ' ' + dd[5:7]
-    # E = dd[8:10] + ' ' + dd[11:13] + ' ' + dd[13:]
-    # d1, m1, s1 = N.split(' ')
-    # d2, m2, s2 = E.split(' ')
-    #
-    # try:
-    #     return f'{toFixed((int(d2) + int(m2) / 60 + int(s2) / 3600), 6)} {toFixed((int(d1) + int(m1) / 60 + int(s1) / 3600), 6)}'
-    # except ValueError:
-    #     pass
+        print(f'{DD_N}N{str(MM_N).rjust(2, "0")}{str(SS_N).rjust(2, "0")}')
+        print(f'{DD_E}E{str(MM_E).rjust(2, "0")}{str(SS_E).rjust(2, "0")}')
 
 
 def query_data_from_database():
