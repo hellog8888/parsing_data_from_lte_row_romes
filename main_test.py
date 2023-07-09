@@ -6,6 +6,7 @@ from math import trunc
 from idlelib import query
 
 import psycopg2
+
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -105,21 +106,33 @@ def toFixed(numObj, digits=0):
     return f"{numObj:.{digits}f}"
 
 
-def convert_coords(file):
+def convert_coords(data, lan_lon):
+    DD = trunc(float(data))
+    MM = trunc((float(data) - float(data)) * 60)
+    SS = trunc(((float(data) - data) * 60 - MM) * 60)
+
+    return f'{DD}{lan_lon}{str(MM).rjust(2, "0")}{str(SS).rjust(2, "0")}'
+# def convert_coords2(file):
+#     with open(file, 'r') as file_txt:
+#         E, N, E_e, N_e = file_txt.read().split(';')
+# 
+#         DD_N = trunc(float(N))
+#         DD_E = trunc(float(E))
+# 
+#         MM_N = trunc((float(N) - DD_N) * 60)
+#         MM_E = trunc((float(E) - DD_E) * 60)
+# 
+#         SS_N = trunc(((float(N) - DD_N) * 60 - MM_N) * 60)
+#         SS_E = trunc(((float(E) - DD_E) * 60 - MM_E) * 60)
+# 
+#         print(f'{DD_N}N{str(MM_N).rjust(2, "0")}{str(SS_N).rjust(2, "0")}')
+#         print(f'{DD_E}E{str(MM_E).rjust(2, "0")}{str(SS_E).rjust(2, "0")}')
+
+def search_coords(file):
     with open(file, 'r') as file_txt:
-        E, N, E_e, N_e = file_txt.read().split(';')
+        E, N, E_error, N_error = file_txt.read().split(';')
 
-        DD_N = trunc(float(N))
-        DD_E = trunc(float(E))
-
-        MM_N = trunc((float(N) - DD_N) * 60)
-        MM_E = trunc((float(E) - DD_E) * 60)
-
-        SS_N = trunc(((float(N) - DD_N) * 60 - MM_N) * 60)
-        SS_E = trunc(((float(E) - DD_E) * 60 - MM_E) * 60)
-
-        print(f'{DD_N}N{str(MM_N).rjust(2, "0")}{str(SS_N).rjust(2, "0")}')
-        print(f'{DD_E}E{str(MM_E).rjust(2, "0")}{str(SS_E).rjust(2, "0")}')
+        print(f'{convert_coords(E, "E")} {convert_coords(N, "N")}')
 
 
 def query_data_from_database():
@@ -326,4 +339,4 @@ if __name__ == "__main__":
     #search_row(export_file_csv[0])
 
     #query_data_from_database()
-    convert_coords(test_file_txt)
+    search_coords(test_file_txt)
