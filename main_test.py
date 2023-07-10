@@ -125,39 +125,37 @@ def search_coords(file):
 
         temp = ONE_SEC
 
-        print(E)
-
         E_pos = []
-
-        for i in range(9):
-            E_pos.append(toFixed(E + temp, 6))
-            temp += ONE_SEC
-        temp = ONE_SEC
-
-        for i in range(9):
-            E_pos.append(toFixed(E + temp, 6))
-            temp -= ONE_SEC
-        temp = ONE_SEC
-
-        print(E_pos)
-
-        print(N)
-
         N_pos = []
 
-        for i in range(9):
-            N_pos.append(toFixed(N + temp, 6))
+        E_pos.append(convert_coords(E, 'E'))
+        N_pos.append(convert_coords(N, 'N'))
+
+        for i in range(10):
+            E_pos.append(convert_coords(toFixed(E + temp, 6), 'E'))
             temp += ONE_SEC
         temp = ONE_SEC
 
-        for i in range(9):
-            N_pos.append(toFixed(N - temp, 6))
-            temp -= ONE_SEC
+        for i in range(10):
+            E_pos.append(convert_coords(toFixed(E - temp, 6), 'E'))
+            temp += ONE_SEC
         temp = ONE_SEC
 
-        print(N_pos)
+        for i in range(10):
+            N_pos.append(convert_coords(toFixed(N + temp, 6), 'N'))
+            temp += ONE_SEC
+        temp = ONE_SEC
 
-        #print(f'{convert_coords(E, "E")} {convert_coords(N, "N")}')
+        for i in range(10):
+            N_pos.append(convert_coords(toFixed(N - temp, 6), 'N'))
+            temp += ONE_SEC
+
+        for i in N_pos:
+            for j in range(len(E_pos)):
+                coords_list.append(f'{i};{E_pos[j]}')
+
+        [print(x) for x in coords_list]
+        print(len(coords_list))
 
 
 def query_data_from_database():
