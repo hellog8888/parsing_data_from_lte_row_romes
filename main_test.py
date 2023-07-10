@@ -1,12 +1,9 @@
-import csv
-import glob
 import os
+import glob
+import csv
 import datetime
-from math import trunc
-from idlelib import query
-
 import psycopg2
-
+from math import trunc
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -21,6 +18,7 @@ DICT_FREQ = {'6175': '793.5', '6338': '809.8', '6350': '811.0',
 BASE_STATION_LIST = []
 BASE_STATION_OPERATOR = dict()
 BS_LIST_LAN_LON = dict()
+
 
 def measure_time(func):
     def wrapper(*args, **kwargs):
@@ -115,10 +113,51 @@ def convert_coords(data, lan_lon):
 
 
 def search_coords(file):
+
+    ONE_SEC = 0.000278
+    coords_list = []
+
     with open(file, 'r') as file_txt:
         E, N, E_error, N_error = file_txt.read().split(';')
 
-        print(f'{convert_coords(E, "E")} {convert_coords(N, "N")}')
+        E = float(E)
+        N = float(N)
+
+        temp = ONE_SEC
+
+        print(E)
+
+        E_pos = []
+
+        for i in range(9):
+            E_pos.append(toFixed(E + temp, 6))
+            temp += ONE_SEC
+        temp = ONE_SEC
+
+        for i in range(9):
+            E_pos.append(toFixed(E + temp, 6))
+            temp -= ONE_SEC
+        temp = ONE_SEC
+
+        print(E_pos)
+
+        print(N)
+
+        N_pos = []
+
+        for i in range(9):
+            N_pos.append(toFixed(N + temp, 6))
+            temp += ONE_SEC
+        temp = ONE_SEC
+
+        for i in range(9):
+            N_pos.append(toFixed(N - temp, 6))
+            temp -= ONE_SEC
+        temp = ONE_SEC
+
+        print(N_pos)
+
+        #print(f'{convert_coords(E, "E")} {convert_coords(N, "N")}')
 
 
 def query_data_from_database():
@@ -214,7 +253,7 @@ def search_row(tecRaw_file):
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
-                    # show display
+                    #show display
                     #print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
                     print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power, mib_dl_bandwidth_mhz_]), file=temp_result_file)
                     print(f'{date_.center(0)} | {time_.center(0)} | {earfcn.center(12)} | {frequency_.center(12)} | {pci.center(3)} | {mcc.center(5)} | {mnc.center(7)} | {tac.center(0)} | {ci.center(0)} | {enodebid.center(12)} | {power.center(0)} | {mib_dl_bandwidth_mhz_.center(30)}', file=temp_result_file_txt)
