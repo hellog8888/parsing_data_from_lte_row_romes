@@ -277,8 +277,8 @@ def search_row(tecRaw_file):
                     date_x, time_x, earfcn_x, freq_x, *other_x, bandwidth_x = line.strip().split('|')
 
                     temp_peleng_bs = f"{i}_{name_operator}_{DICT_FREQ[earfcn_x.strip()]}"
-                    
-                    #присоеденить цикл ниже вместо записи сюда
+
+                    #присоеденить цикл ниже вместо записи файла _sys сюда новый файл
                     if temp_peleng_bs in BS_LIST_LAN_LON:
                         with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt',
                                   'w') as file_with_coords:
