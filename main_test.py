@@ -112,76 +112,64 @@ def convert_coords(data, lan_lon):
     return f'{DD}{lan_lon}{str(MM).rjust(2, "0")}{str(SS).rjust(2, "0")}'
 
 
-def search_coords(file):
-
+def search_coords(E, N):
     ONE_SEC = 0.000278
     coords_list = []
 
-    with open(file, 'r') as file_txt:
-        E, N, E_error, N_error = file_txt.read().split(';')
+    E = float(E)
+    N = float(N)
 
-        E = float(E)
-        N = float(N)
+    temp = ONE_SEC
 
-        temp = ONE_SEC
+    E_pos = []
+    N_pos = []
 
-        E_pos = []
-        N_pos = []
+    E_pos.append(convert_coords(E, 'E'))
+    N_pos.append(convert_coords(N, 'N'))
 
-        E_pos.append(convert_coords(E, 'E'))
-        N_pos.append(convert_coords(N, 'N'))
+    for i in range(9):
+        E_pos.append(convert_coords(toFixed(E + temp, 6), 'E'))
+        temp += ONE_SEC
+    temp = ONE_SEC
 
-        for i in range(10):
-            E_pos.append(convert_coords(toFixed(E + temp, 6), 'E'))
-            temp += ONE_SEC
-        temp = ONE_SEC
+    for i in range(9):
+        E_pos.append(convert_coords(toFixed(E - temp, 6), 'E'))
+        temp += ONE_SEC
+    temp = ONE_SEC
 
-        for i in range(10):
-            E_pos.append(convert_coords(toFixed(E - temp, 6), 'E'))
-            temp += ONE_SEC
-        temp = ONE_SEC
+    for i in range(9):
+        N_pos.append(convert_coords(toFixed(N + temp, 6), 'N'))
+        temp += ONE_SEC
+    temp = ONE_SEC
 
-        for i in range(10):
-            N_pos.append(convert_coords(toFixed(N + temp, 6), 'N'))
-            temp += ONE_SEC
-        temp = ONE_SEC
+    for i in range(9):
+        N_pos.append(convert_coords(toFixed(N - temp, 6), 'N'))
+    temp += ONE_SEC
 
-        for i in range(10):
-            N_pos.append(convert_coords(toFixed(N - temp, 6), 'N'))
-            temp += ONE_SEC
+    for i in N_pos:
+        for j in range(len(E_pos)):
+            coords_list.append(f'{i};{E_pos[j]}')
 
-        for i in N_pos:
-            for j in range(len(E_pos)):
-                coords_list.append(f'{i};{E_pos[j]}')
+    test_list = [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
+    test_list = [x for x in test_list if x != None]
 
-        [print(x) for x in coords_list]
-        print(len(coords_list))
+    return test_list
 
 
-def query_data_from_database():
-
-    hostname = 'localhost'
-    database = 'eirs'
-    username = 'postgres'
-    password = '1234'
-    port_id = 5432
+def query_data_from_database(lon, lan):
     connection = None
-
     try:
 
-        connection = psycopg2.connect(dbname=database, user=username, password=password, host=hostname)
+        connection = psycopg2.connect(dbname="eirs", user="postgres", password="1234", host="localhost")
         cursor = connection.cursor()
 
-        cursor.execute("SELECT * FROM cellular")
-
-        print(cursor.fetchmany(4))
-
-        cursor.close()
-        connection.close()
+        cursor.execute(f"SELECT * FROM cellular WHERE Широта = '{lon}' AND Долгота = '{lan}'")
+        return cursor.fetchone()
+        #cursor.close()
+        #connection.close()
 
     except Exception as error:
         print(error)
-
     finally:
         if connection is not None:
             connection.close()
@@ -189,6 +177,7 @@ def query_data_from_database():
 
 @measure_time
 def search_row(tecRaw_file):
+
     temp_row_from_reader = []
     temp_dict_EARFCN = dict()
     header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
@@ -251,14 +240,15 @@ def search_row(tecRaw_file):
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
-                    #show display
                     #print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
+
                     print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power, mib_dl_bandwidth_mhz_]), file=temp_result_file)
                     print(f'{date_.center(0)} | {time_.center(0)} | {earfcn.center(12)} | {frequency_.center(12)} | {pci.center(3)} | {mcc.center(5)} | {mnc.center(7)} | {tac.center(0)} | {ci.center(0)} | {enodebid.center(12)} | {power.center(0)} | {mib_dl_bandwidth_mhz_.center(30)}', file=temp_result_file_txt)
                     print('\n', file=temp_result_file)
 
             temp_dict_EARFCN.clear()
             #print()
+
         except FileExistsError:
             pass
         except KeyError:
@@ -269,6 +259,7 @@ def search_row(tecRaw_file):
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
             convert_to_img(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt',
                            f'result_folder\{i}_{name_operator}\{i}_{name_operator}')
+
         except FileExistsError:
             pass
         except KeyError:
@@ -350,16 +341,28 @@ def search_row(tecRaw_file):
         except KeyError:
             pass
 
+    for i in BASE_STATION_LIST:
+        name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
+        with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_sys.txt') as file_with_coords_read, \
+                open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_data_from_db.txt', 'w') as file_with_coords_to_write:
+            
+            E, N, E_error, N_error = file_with_coords_read.read().split(';')
+            
+            temp_to_write = search_coords(E, N)
+            
+            [print(x, file=file_with_coords_to_write) for x in temp_to_write]
+
+
 if __name__ == "__main__":
 
     #export_file_csv = glob.glob('source_folder\*.csv')
     #export_file_txt = glob.glob('source_folder\*.txt')
 
-    test_file_txt = glob.glob('test\*.txt')[0]
+    #test_file_txt = glob.glob('test\*.txt')[0]
 
     #BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
     #BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
     #search_row(export_file_csv[0])
 
-    #query_data_from_database()
-    search_coords(test_file_txt)
+    #query_data_from_database('45N0110', '38E5823')
+    #search_coords(test_file_txt)
