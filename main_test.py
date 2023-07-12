@@ -94,7 +94,7 @@ def bs_lan_lon_from_export_romes(file_txt):
 def create_folders(data):
     for num_bs in data:
         try:
-            os.mkdir(f'result_folder\{num_bs}_{DICT_OPERATOR[BASE_STATION_OPERATOR[num_bs]]}')
+            os.mkdir(f'result\{num_bs}_{DICT_OPERATOR[BASE_STATION_OPERATOR[num_bs]]}')
         except FileExistsError:
             pass
         except KeyError:
@@ -190,8 +190,7 @@ def search_row(tecRaw_file):
         for row in csv.reader(tecRaw_in, delimiter=','):
             count_line += 1
             try:
-                if row[
-                    0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
+                if row[0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
                     flag = True
                     break
             except IndexError:
@@ -212,8 +211,8 @@ def search_row(tecRaw_file):
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.csv', 'w') as temp_result_file, \
-                    open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt', 'w') as temp_result_file_txt:
+            with open(f'result\{i}_{name_operator}\{i}_{name_operator}.csv', 'w') as temp_result_file, \
+                    open(f'result\{i}_{name_operator}\{i}_{name_operator}.txt', 'w') as temp_result_file_txt:
 
                 for x in temp_row_from_reader:
                     temp_x = x.split(';')
@@ -237,7 +236,7 @@ def search_row(tecRaw_file):
                     row_to_res = temp_row_dict.split(';')
                     date_, time_, earfcn, = row_to_res[0], row_to_res[1][:8], row_to_res[9]
                     frequency_, pci, mcc, mnc = f'{row_to_res[10][:4]}.{row_to_res[10][4]}', row_to_res[11], \
-                        row_to_res[12], row_to_res[13]
+                                                row_to_res[12], row_to_res[13]
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
@@ -261,8 +260,8 @@ def search_row(tecRaw_file):
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            convert_to_img(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt',
-                           f'result_folder\{i}_{name_operator}\{i}_{name_operator}')
+            convert_to_img(f'result\{i}_{name_operator}\{i}_{name_operator}.txt',
+                           f'result\{i}_{name_operator}\{i}_{name_operator}')
 
         except FileExistsError:
             pass
@@ -272,15 +271,15 @@ def search_row(tecRaw_file):
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}.txt') as temp_file_to_xml:
+            with open(f'result\{i}_{name_operator}\{i}_{name_operator}.txt') as temp_file_to_xml:
                 for line in temp_file_to_xml:
                     date_x, time_x, earfcn_x, freq_x, *other_x, bandwidth_x = line.strip().split('|')
 
                     temp_peleng_bs = f"{i}_{name_operator}_{DICT_FREQ[earfcn_x.strip()]}"
 
                     if temp_peleng_bs in BS_LIST_LAN_LON:
-                        with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt', 'w') as file_with_coords:
-
+                        with open(f'result\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt',
+                                  'w') as file_with_coords:
                             temp_data_peling = BS_LIST_LAN_LON[temp_peleng_bs]
 
                             # фильтрация по операторам и дубликаты из БД
@@ -296,7 +295,7 @@ def search_row(tecRaw_file):
 
                             [print(*x, file=file_with_coords) for x in temp_to_write]
 
-                    with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
+                    with open(f'result\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
                               'w') as temp_result_file_xml:
                         body_spectre_0 = f'<?xml version="1.0" encoding="Windows-1251"?>'
                         print(body_spectre_0, file=temp_result_file_xml)
@@ -362,10 +361,9 @@ def search_row(tecRaw_file):
 
 
 if __name__ == "__main__":
+    export_file_csv = glob.glob('source\*.csv')
+    export_file_txt = glob.glob('source\*.txt')
 
- export_file_csv = glob.glob('source_folder\*.csv')
- export_file_txt = glob.glob('source_folder\*.txt')
-
- BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
- BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
- search_row(export_file_csv[0])
+    BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
+    BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
+    search_row(export_file_csv[0])
