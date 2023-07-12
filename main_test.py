@@ -152,9 +152,8 @@ def search_coords(E, N):
             coords_list.append(f'{i};{E_pos[j]}')
 
     test_list = [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
-    test_list = [x for x in test_list if x != None]
 
-    return test_list
+    return set(test_list)
 
 
 def query_data_from_database(lon, lan):
