@@ -278,11 +278,23 @@ def search_row(tecRaw_file):
 
                     temp_peleng_bs = f"{i}_{name_operator}_{DICT_FREQ[earfcn_x.strip()]}"
 
-                    #присоеденить цикл ниже вместо записи файла _sys сюда новый файл
                     if temp_peleng_bs in BS_LIST_LAN_LON:
-                        with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt',
-                                  'w') as file_with_coords:
-                            print(f'{BS_LIST_LAN_LON[temp_peleng_bs]}', file=file_with_coords)
+                        with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt', 'w') as file_with_coords:
+
+                            temp_data_peling = BS_LIST_LAN_LON[temp_peleng_bs]
+
+                            # фильтрация по операторам и дубликаты из БД
+                            E, N, E_error, N_error = temp_data_peling.split(';')
+
+                            print(f'Широта:  {N}', file=file_with_coords)
+                            print(f'Долгота: {E}', file=file_with_coords)
+                            print('', file=file_with_coords)
+                            print(f'Широта_погрешность_км:  {N_error}', file=file_with_coords)
+                            print(f'Долгота_погрешность_км: {E_error}', file=file_with_coords)
+
+                            temp_to_write = search_coords(E, N)
+
+                            [print(*x, file=file_with_coords) for x in temp_to_write]
 
                     with open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
                               'w') as temp_result_file_xml:
@@ -347,20 +359,6 @@ def search_row(tecRaw_file):
             pass
         except KeyError:
             pass
-
-    for i in BASE_STATION_LIST:
-        name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-
-        file_read = glob.glob(f'result_folder\{i}_{name_operator}\*_sys.txt')[0]
-
-        with open(file_read) as file_with_coords_read, \
-                open(f'result_folder\{i}_{name_operator}\{i}_{name_operator}_data_from_db.txt', 'w') as file_with_coords_to_write:
-
-            E, N, E_error, N_error = file_with_coords_read.read().split(';')
-
-            temp_to_write = search_coords(E, N)
-
-            [print(x, file=file_with_coords_to_write) for x in temp_to_write]
 
 
 if __name__ == "__main__":
