@@ -151,6 +151,7 @@ def search_coords(E, N):
         for j in range(len(E_pos)):
             coords_list.append(f'{i};{E_pos[j]}')
 
+    # добавить удаление None
     test_list = [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
 
     return set(test_list)
