@@ -113,6 +113,31 @@ def convert_coords(data, lan_lon):
     return f'{DD}{lan_lon}{str(MM).rjust(2, "0")}{str(SS).rjust(2, "0")}'
 
 
+def query_data_from_database(list_coords):
+    connection = None
+    result = []
+
+    try:
+
+        connection = psycopg2.connect(dbname="eirs", user="postgres", password="1234", host="localhost")
+        cursor = connection.cursor()
+
+        for x in list_coords:
+            cursor.execute(f"SELECT * FROM cellular WHERE Широта = '{x.split(';')[0]}' AND Долгота = '{x.split(';')[1]}'")
+            result.append(cursor.fetchone())
+
+        return result
+
+        # cursor.close()
+        # connection.close()
+
+    except Exception as error:
+        print(error)
+    finally:
+        if connection is not None:
+            connection.close()
+
+
 def search_coords(E, N):
     ONE_SEC = 0.000278
     coords_list = []
@@ -151,37 +176,17 @@ def search_coords(E, N):
         for j in range(len(E_pos)):
             coords_list.append(f'{i};{E_pos[j]}')
 
-    # добавить удаление None
-    test_list = [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
+    #test_list = [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
+    #return [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
 
-    return set(test_list)
-
-
-def query_data_from_database(lon, lan):
-    connection = None
-    try:
-
-        connection = psycopg2.connect(dbname="eirs", user="postgres", password="1234", host="localhost")
-        cursor = connection.cursor()
-
-        cursor.execute(f"SELECT * FROM cellular WHERE Широта = '{lon}' AND Долгота = '{lan}'")
-        return cursor.fetchone()
-        # cursor.close()
-        # connection.close()
-
-    except Exception as error:
-        print(error)
-    finally:
-        if connection is not None:
-            connection.close()
-
+    return query_data_from_database(coords_list)
 
 @measure_time
 def search_row(tecRaw_file):
     temp_row_from_reader = []
     temp_dict_EARFCN = dict()
     header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
-
+    print('stage: 3.1')
     with open(tecRaw_file) as tecRaw_in:
         flag = False
         count_line = 0
@@ -207,7 +212,7 @@ def search_row(tecRaw_file):
                         BASE_STATION_OPERATOR[temp_row] = BASE_STATION_OPERATOR.get(temp_row, temp_row_operator)
 
     create_folders(BASE_STATION_LIST)
-
+    print('stage: 3.2')
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
@@ -256,7 +261,7 @@ def search_row(tecRaw_file):
             pass
         except KeyError:
             pass
-
+    print('stage: 3.3')
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
@@ -267,7 +272,7 @@ def search_row(tecRaw_file):
             pass
         except KeyError:
             pass
-
+    print('stage: 3.4')
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
@@ -282,18 +287,17 @@ def search_row(tecRaw_file):
                                   'w') as file_with_coords:
                             temp_data_peling = BS_LIST_LAN_LON[temp_peleng_bs]
 
-                            # фильтрация по операторам и дубликаты из БД
                             E, N, E_error, N_error = temp_data_peling.split(';')
 
-                            print(f'Широта:  {N}', file=file_with_coords)
-                            print(f'Долгота: {E}', file=file_with_coords)
+                            print(f'Широта:  {convert_coords(N, "N")}', file=file_with_coords)
+                            print(f'Долгота: {convert_coords(E, "E")}', file=file_with_coords)
                             print('', file=file_with_coords)
-                            print(f'Широта_погрешность_км:  {N_error}', file=file_with_coords)
-                            print(f'Долгота_погрешность_км: {E_error}', file=file_with_coords)
+                            print(f'Широта погрешность км:  {N_error}', file=file_with_coords)
+                            print(f'Долгота погрешность км: {E_error}', file=file_with_coords)
+                            print('', file=file_with_coords)
 
-                            temp_to_write = search_coords(E, N)
-
-                            [print(*x, file=file_with_coords) for x in temp_to_write]
+                            if float(N_error) + float(E_error) < 24.0:
+                                [print(*x, file=file_with_coords) for x in search_coords(E, N) if x]
 
                     with open(f'result\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
                               'w') as temp_result_file_xml:
@@ -364,6 +368,10 @@ if __name__ == "__main__":
     export_file_csv = glob.glob('source\*.csv')
     export_file_txt = glob.glob('source\*.txt')
 
+    print('stage: Получение списка БС')
     BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
+    print('stage: Создание словаря с координатами БС')
     BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
+    print('stage: 3')
     search_row(export_file_csv[0])
+    print('stage: done')
