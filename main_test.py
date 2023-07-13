@@ -122,6 +122,7 @@ def query_data_from_database(list_coords):
         connection = psycopg2.connect(dbname="eirs", user="postgres", password="1234", host="localhost")
         cursor = connection.cursor()
 
+        # добавляет 1 значение fetchone за выборку, проблема с БС 230819_beeline
         for x in list_coords:
             cursor.execute(f"SELECT * FROM cellular WHERE Широта = '{x.split(';')[0]}' AND Долгота = '{x.split(';')[1]}'")
             result.append(cursor.fetchone())
