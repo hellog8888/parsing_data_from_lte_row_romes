@@ -6,6 +6,7 @@ import psycopg2
 from math import trunc
 from PIL import Image, ImageDraw, ImageFont
 
+
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
 
 DICT_FREQ = {'6175': '793.5', '6338': '809.8', '6350': '811.0',
@@ -101,6 +102,16 @@ def create_folders(data):
             pass
 
 
+def recursive_flatten_generator(array):
+    lst = []
+    for i in array:
+        if isinstance(i, list):
+            lst.extend(recursive_flatten_generator(i))
+        else:
+            lst.append(i)
+    return lst
+
+
 def toFixed(numObj, digits=0):
     return f"{numObj:.{digits}f}"
 
@@ -118,19 +129,14 @@ def query_data_from_database(list_coords):
     result = []
 
     try:
-
         connection = psycopg2.connect(dbname="eirs", user="postgres", password="1234", host="localhost")
         cursor = connection.cursor()
 
-        # добавляет 1 значение fetchone за выборку, проблема с БС 230819_beeline
         for x in list_coords:
             cursor.execute(f"SELECT * FROM cellular WHERE Широта = '{x.split(';')[0]}' AND Долгота = '{x.split(';')[1]}'")
-            result.append(cursor.fetchone())
+            result.append(cursor.fetchall())
 
-        return result
-
-        # cursor.close()
-        # connection.close()
+        return recursive_flatten_generator(result)
 
     except Exception as error:
         print(error)
@@ -177,8 +183,7 @@ def search_coords(E, N):
         for j in range(len(E_pos)):
             coords_list.append(f'{i};{E_pos[j]}')
 
-    #test_list = [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
-    #return [query_data_from_database(x.split(';')[0], x.split(';')[1]) for x in coords_list]
+
 
     return query_data_from_database(coords_list)
 
@@ -246,8 +251,6 @@ def search_row(tecRaw_file):
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
-                    # print(date_, time_, earfcn, frequency_, pci, mcc, mnc, ci, enodebid, power, mib_dl_bandwidth_mhz_)
-
                     print(';'.join([date_, time_, earfcn, frequency_, pci, mcc, mnc, tac, ci, enodebid, power,
                                     mib_dl_bandwidth_mhz_]), file=temp_result_file)
                     print(
@@ -256,12 +259,11 @@ def search_row(tecRaw_file):
                     print('\n', file=temp_result_file)
 
             temp_dict_EARFCN.clear()
-            # print()
-
         except FileExistsError:
             pass
         except KeyError:
             pass
+
     print('stage: 3.3')
     for i in BASE_STATION_LIST:
         try:
@@ -297,7 +299,7 @@ def search_row(tecRaw_file):
                             print(f'Долгота погрешность км: {E_error}', file=file_with_coords)
                             print('', file=file_with_coords)
 
-                            if float(N_error) + float(E_error) < 24.0:
+                            if float(N_error) + float(E_error) < 16.0:
                                 [print(*x, file=file_with_coords) for x in search_coords(E, N) if x]
 
                     with open(f'result\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
@@ -374,5 +376,7 @@ if __name__ == "__main__":
     print('stage: Создание словаря с координатами БС')
     BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
     print('stage: 3')
+    .
     search_row(export_file_csv[0])
+    print('')
     print('stage: done')
