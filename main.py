@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
 
-DICT_FREQ = {'6175': '793.5', '6338': '809.8', '6350': '811.0',
+DICT_FREQ = {'6175': '793.5', '6200': '796.0', '6338': '809.8', '6350': '811.0',
              '200': '2130.0', '350': '2145.0', '550': '2165.0',
              '1275': '1812.5', '1575': '1842.5', '1425': '1827.5', '1850': '1870.0',
              '2850': '2630.0', '3200': '2665.0', '3300': '2675.0', '3048': '2649.8', '3400': '2685.0',
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     print('stage: Создание словаря с координатами БС')
     BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
     print('stage: 3')
-    .
+
     search_row(export_file_csv[0])
     print('')
     print('stage: done')
