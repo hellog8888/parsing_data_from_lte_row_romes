@@ -33,16 +33,6 @@ def measure_time(func):
 
 
 def convert_to_img(file_name, path_to_save=''):
-    path_to_save_file = path_to_save
-
-    width = 1830
-    height = 180
-    bg_color = (255, 255, 255)
-
-    font_size = 30
-    font = ImageFont.truetype("arial.ttf", font_size)
-    text_color = (0, 0, 0)
-
     h_Data = 'Date'
     h_Time = 'Time'
     h_EARFCN = 'EARFCN'
@@ -58,15 +48,14 @@ def convert_to_img(file_name, path_to_save=''):
     header_to_img = f'{h_Data.center(15)} | {h_Time.center(10)} | {h_EARFCN.center(0)} | {h_Frequency.center(0)} | {h_PCI.center(0)} | {h_MCC.center(0)} | {h_MNC.center(0)} | {h_TAC.center(6)} | {h_CI.center(17)} | {h_eNodeB_ID.center(0)} | {h_Power.center(0)} | {h_MIB_Bandwidth_MHz.center(0)}'
     line_separator = '-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------'
 
+    font = ImageFont.truetype("arial.ttf", 30)
+
     with open(file_name, 'r') as file:
         for line in file.readlines():
-            image = Image.new('RGB', (width, height), color=bg_color)
+            image = Image.new('RGB', (1830, 180), color=(255, 255, 255))
             draw = ImageDraw.Draw(image)
-
-            # смещение по размеру изображения
-            draw.text((30, 47), f'{header_to_img}\n{line_separator}\n{line}', fill=text_color, font=font)
-
-            image.save(f'{path_to_save_file}_{line.split("|")[3].strip()}.png')
+            draw.text((30, 47), f'{header_to_img}\n{line_separator}\n{line}', fill=(0, 0, 0), font=font)
+            image.save(f'{path_to_save}_{line.split("|")[3].strip()}.png')
 
 
 def base_station_get_from_export_romes(file_txt):
@@ -192,14 +181,13 @@ def search_row(tecRaw_file):
     temp_row_from_reader = []
     temp_dict_EARFCN = dict()
     header_row = 'Date;Time;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;Power;MIB_Bandwidth(MHz)'
+
     print('stage: 3.1')
     with open(tecRaw_file, newline='', encoding='cp1251') as tecRaw_in:
         flag = False
         count_line = 0
         flag_count = 0
 
-    #   with open('some.csv', newline='', encoding='utf-8') as f:
-    #   reader = csv.reader(f)
     # , delimiter=','
         for row in csv.reader(tecRaw_in):
             count_line += 1
@@ -221,6 +209,7 @@ def search_row(tecRaw_file):
                         BASE_STATION_OPERATOR[temp_row] = BASE_STATION_OPERATOR.get(temp_row, temp_row_operator)
 
     create_folders(BASE_STATION_LIST)
+
     print('stage: 3.2')
     for i in BASE_STATION_LIST:
         try:
@@ -267,7 +256,7 @@ def search_row(tecRaw_file):
         except KeyError:
             pass
 
-    print('stage: 3.3')
+    print('stage: create_img_png')
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
@@ -278,6 +267,7 @@ def search_row(tecRaw_file):
             pass
         except KeyError:
             pass
+
     print('stage: 3.4')
     for i in BASE_STATION_LIST:
         try:
@@ -382,12 +372,13 @@ if __name__ == "__main__":
     except FileExistsError:
         pass
 
-    print('stage: Получение списка БС')
+    print('Getting a list of BaseStations from a ?_file_name_?')
     BASE_STATION_LIST = base_station_get_from_export_romes(export_file_txt[0])
-    print('stage: Создание словаря с координатами БС')
-    BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
-    print('stage: 3')
 
+    print('Создание словаря с координатами БС')
+    BS_LIST_LAN_LON = bs_lan_lon_from_export_romes(export_file_txt[0])
+
+    print('stage: 3')
     search_row(export_file_csv[0])
-    print('')
+
     print('stage: done')
