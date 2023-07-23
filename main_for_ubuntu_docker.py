@@ -125,35 +125,25 @@ def search_coords(E, N):
     ONE_SEC = 0.000278
     coords_list = []
 
-    E = float(E)
-    N = float(N)
+    E, N = float(E), float(N)
 
     temp = ONE_SEC
 
-    E_pos = []
-    N_pos = []
+    E_pos, N_pos = [], []
 
     E_pos.append(convert_coords(E, 'E'))
     N_pos.append(convert_coords(N, 'N'))
 
     for i in range(9):
+        
         E_pos.append(convert_coords(toFixed(E + temp, 6), 'E'))
-        temp += ONE_SEC
-    temp = ONE_SEC
-
-    for i in range(9):
         E_pos.append(convert_coords(toFixed(E - temp, 6), 'E'))
-        temp += ONE_SEC
-    temp = ONE_SEC
 
-    for i in range(9):
         N_pos.append(convert_coords(toFixed(N + temp, 6), 'N'))
-        temp += ONE_SEC
-    temp = ONE_SEC
-
-    for i in range(9):
         N_pos.append(convert_coords(toFixed(N - temp, 6), 'N'))
-    temp += ONE_SEC
+        
+        temp += 0.000278
+
 
     for i in N_pos:
         for j in range(len(E_pos)):
