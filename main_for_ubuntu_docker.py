@@ -3,9 +3,9 @@ import glob
 import csv
 import datetime
 import psycopg2
+
 from math import trunc
 from PIL import Image, ImageDraw, ImageFont
-
 
 DICT_OPERATOR = {'1': 'mts', '2': 'megafon', '20': 't2_mobile', '99': 'beeline'}
 
@@ -54,6 +54,7 @@ def base_station_get_from_export_romes(file_txt):
 def bs_lan_lon_from_export_romes(file_txt):
     with open(file_txt, 'r') as file_txt_r:
         temp_rows = dict()
+        temp_rows_2 = dict()
 
         for k in file_txt_r:
             if k.startswith('eNodeB') and k.strip().split(';')[13] != '11':
@@ -61,17 +62,22 @@ def bs_lan_lon_from_export_romes(file_txt):
                 temp_rows[t] = temp_rows.get(t, []) + [
                     f"{k.strip().split(';')[1]};{k.strip().split(';')[2]};{k.strip().split(';')[4]};{k.strip().split(';')[5]}"]
 
-        temp_rows_2 = {k: sorted(v, key=lambda x: float(x.split(';')[2]))[0] for k, v in temp_rows.items()}
-        temp_rows_3 = {f"{k.split('_')[0]}_{DICT_OPERATOR[k.split('_')[1]]}_{DICT_FREQ[k.split('_')[2]]}": v for k, v in
-                       temp_rows_2.items() if v.split(';')[0] != '0'}
+        temp_rows = {k: sorted(v, key=lambda x: float(x.split(';')[2]))[0] for k, v in temp_rows.items()}
 
-        return temp_rows_3
+        for k, v in temp_rows.items():
+            if v.split(';')[0] != '0':
+                try:
+                    temp_rows_2[f"{k.split('_')[0]}_{DICT_OPERATOR[k.split('_')[1]]}_{DICT_FREQ[k.split('_')[2]]}"] = v
+                except KeyError:
+                    pass
+
+        return temp_rows_2
 
 
 def create_folders(data):
     for num_bs in data:
         try:
-            os.mkdir(f'result\{num_bs}_{DICT_OPERATOR[BASE_STATION_OPERATOR[num_bs]]}')
+            os.mkdir(f'result/{num_bs}_{DICT_OPERATOR[BASE_STATION_OPERATOR[num_bs]]}')
         except FileExistsError:
             pass
         except KeyError:
@@ -109,7 +115,8 @@ def query_data_from_database(list_coords):
         cursor = connection.cursor()
 
         for x in list_coords:
-            cursor.execute(f"SELECT * FROM cellular WHERE Широта = '{x.split(';')[0]}' AND Долгота = '{x.split(';')[1]}'")
+            cursor.execute(
+                f"SELECT * FROM cellular WHERE Широта = '{x.split(';')[0]}' AND Долгота = '{x.split(';')[1]}'")
             result.append(cursor.fetchall())
 
         return recursive_flatten_generator(result)
@@ -135,21 +142,20 @@ def search_coords(E, N):
     N_pos.append(convert_coords(N, 'N'))
 
     for i in range(9):
-        
         E_pos.append(convert_coords(toFixed(E + temp, 6), 'E'))
         E_pos.append(convert_coords(toFixed(E - temp, 6), 'E'))
 
         N_pos.append(convert_coords(toFixed(N + temp, 6), 'N'))
         N_pos.append(convert_coords(toFixed(N - temp, 6), 'N'))
-        
-        temp += 0.000278
 
+        temp += 0.000278
 
     for i in N_pos:
         for j in range(len(E_pos)):
             coords_list.append(f'{i};{E_pos[j]}')
 
     return query_data_from_database(coords_list)
+
 
 @measure_time
 def search_row(tecRaw_file):
@@ -163,11 +169,12 @@ def search_row(tecRaw_file):
         count_line = 0
         flag_count = 0
 
-    # , delimiter=','
+        # , delimiter=','
         for row in csv.reader(tecRaw_in):
             count_line += 1
             try:
-                if row[0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
+                if row[
+                    0] == 'Date;Time;UTC;Latitude;Longitude;Altitude;Speed;Heading;#Sat;EARFCN;Frequency;PCI;MCC;MNC;TAC;CI;eNodeB-ID;cellID;BW;SymPerSlot;Power;SINR;RSRP;RSRQ;4G-Drift;Sigma-4G-Drift;TimeOfArrival;TimeOfArrivalFN;LTE-M;5G NR;eNodeB Tx Ports;SIB2 eMBMS/DSS;MIB dl_Bandwidth(MHz)':
                     flag = True
                     break
             except IndexError:
@@ -189,8 +196,8 @@ def search_row(tecRaw_file):
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            with open(f'result\{i}_{name_operator}\{i}_{name_operator}.csv', 'w') as temp_result_file, \
-                    open(f'result\{i}_{name_operator}\{i}_{name_operator}.txt', 'w') as temp_result_file_txt:
+            with open(f'result/{i}_{name_operator}/{i}_{name_operator}.csv', 'w') as temp_result_file, \
+                    open(f'result/{i}_{name_operator}/{i}_{name_operator}.txt', 'w') as temp_result_file_txt:
 
                 for x in temp_row_from_reader:
                     temp_x = x.split(';')
@@ -214,7 +221,7 @@ def search_row(tecRaw_file):
                     row_to_res = temp_row_dict.split(';')
                     date_, time_, earfcn, = row_to_res[0], row_to_res[1][:8], row_to_res[9]
                     frequency_, pci, mcc, mnc = f'{row_to_res[10][:4]}.{row_to_res[10][4]}', row_to_res[11], \
-                                                row_to_res[12], row_to_res[13]
+                        row_to_res[12], row_to_res[13]
                     tac, ci, enodebid, power = row_to_res[14], row_to_res[15], row_to_res[16], row_to_res[20]
                     mib_dl_bandwidth_mhz_ = row_to_res[32]
 
@@ -235,8 +242,8 @@ def search_row(tecRaw_file):
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            convert_to_img(f'result\{i}_{name_operator}\{i}_{name_operator}.txt',
-                           f'result\{i}_{name_operator}\{i}_{name_operator}')
+            convert_to_img(f'result/{i}_{name_operator}/{i}_{name_operator}.txt',
+                           f'result/{i}_{name_operator}/{i}_{name_operator}')
 
         except FileExistsError:
             pass
@@ -247,14 +254,14 @@ def search_row(tecRaw_file):
     for i in BASE_STATION_LIST:
         try:
             name_operator = DICT_OPERATOR[BASE_STATION_OPERATOR[i]]
-            with open(f'result\{i}_{name_operator}\{i}_{name_operator}.txt') as temp_file_to_xml:
+            with open(f'result/{i}_{name_operator}/{i}_{name_operator}.txt') as temp_file_to_xml:
                 for line in temp_file_to_xml:
                     date_x, time_x, earfcn_x, freq_x, *other_x, bandwidth_x = line.strip().split('|')
 
                     temp_peleng_bs = f"{i}_{name_operator}_{DICT_FREQ[earfcn_x.strip()]}"
 
                     if temp_peleng_bs in BS_LIST_LAN_LON:
-                        with open(f'result\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}_sys.txt',
+                        with open(f'result/{i}_{name_operator}/{i}_{name_operator}_{freq_x.strip()}_sys.txt',
                                   'w') as file_with_coords:
                             temp_data_peling = BS_LIST_LAN_LON[temp_peleng_bs]
 
@@ -267,10 +274,10 @@ def search_row(tecRaw_file):
                             print(f'Долгота погрешность км: {E_error}', file=file_with_coords)
                             print('', file=file_with_coords)
 
-                            #if float(N_error) + float(E_error) < 16.0:
+                            # if float(N_error) + float(E_error) < 16.0:
                             #    [print(*x, file=file_with_coords) for x in search_coords(E, N) if x]
 
-                    with open(f'result\{i}_{name_operator}\{i}_{name_operator}_{freq_x.strip()}.xml',
+                    with open(f'result/{i}_{name_operator}/{i}_{name_operator}_{freq_x.strip()}.xml',
                               'w') as temp_result_file_xml:
                         print(f'<?xml version="1.0" encoding="Windows-1251"?>', file=temp_result_file_xml)
                         print(f'<Result>', file=temp_result_file_xml)
@@ -278,12 +285,15 @@ def search_row(tecRaw_file):
                         print(f'		<ID_TOOL>0</ID_TOOL>', file=temp_result_file_xml)
                         print(f'		<ID_TASK>0</ID_TASK>', file=temp_result_file_xml)
                         print(f'		<TYPE_TASK>1.2</TYPE_TASK>''', file=temp_result_file_xml)
-                        print(f'		<DATE_GET_RESULT>{date_x.strip()} {time_x.strip()}</DATE_GET_RESULT>', file=temp_result_file_xml)
+                        print(f'		<DATE_GET_RESULT>{date_x.strip()} {time_x.strip()}</DATE_GET_RESULT>',
+                              file=temp_result_file_xml)
                         print(f'		<POST_NOR_LAT>00N0000</POST_NOR_LAT>', file=temp_result_file_xml)
                         print(f'		<POST_EAST_LON>00E0000</POST_EAST_LON>', file=temp_result_file_xml)
-                        print(f'		<FREQ>{freq_x.strip().split(".")[0]}{freq_x.strip().split(".")[1]}00000</FREQ>', file=temp_result_file_xml)
+                        print(f'		<FREQ>{freq_x.strip().split(".")[0]}{freq_x.strip().split(".")[1]}00000</FREQ>',
+                              file=temp_result_file_xml)
                         print(f'		<FILTER>2500</FILTER>', file=temp_result_file_xml)
-                        print(f'		<BAND>{bandwidth_x.strip().split(".")[0]}000000</BAND>', file=temp_result_file_xml)
+                        print(f'		<BAND>{bandwidth_x.strip().split(".")[0]}000000</BAND>',
+                              file=temp_result_file_xml)
                         print(f'		<FREQ_MEASURED>0.00</FREQ_MEASURED>', file=temp_result_file_xml)
                         print(f'		<INTENSITY>0.00</INTENSITY>', file=temp_result_file_xml)
                         print(f'		<DETUNING_FREQ>2664999936.00</DETUNING_FREQ>', file=temp_result_file_xml)
